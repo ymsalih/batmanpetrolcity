@@ -38,6 +38,14 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: ctrl.setHaptics,
                 ),
                 SwitchListTile(
+                  key: const Key('low_graphics'),
+                  title: const Text('Pil tasarrufu (düşük grafik)'),
+                  subtitle: const Text('Bulanıklık, bulut gölgeleri ve parçacıklar azalır'),
+                  secondary: const Icon(Icons.battery_saver),
+                  value: s.lowGraphics,
+                  onChanged: ctrl.setLowGraphics,
+                ),
+                SwitchListTile(
                   title: const Text('Ses efektleri'),
                   subtitle: const Text('Ses paketi yakında'),
                   secondary: const Icon(Icons.volume_up),

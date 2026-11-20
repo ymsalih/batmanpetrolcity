@@ -131,11 +131,12 @@ class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProvi
                 fit: StackFit.expand,
                 children: [
                   SoilView(seed: widget.seed, base: const Color(0xFFA0714A)),
-                  RepaintBoundary(
-                    child: CustomPaint(
-                      painter: CloudShadowPainter(time: seconds, night: dn.night),
+                  if (!GraphicsMode.isLow(context))
+                    RepaintBoundary(
+                      child: CustomPaint(
+                        painter: CloudShadowPainter(time: seconds, night: dn.night),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

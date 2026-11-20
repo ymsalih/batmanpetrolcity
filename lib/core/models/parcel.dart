@@ -18,6 +18,7 @@ class Parcel {
     this.broken = false,
     this.repairProgress = 0,
     this.totalProduced = 0,
+    this.brokenAtMs = 0,
   });
 
   static const empty = Parcel();
@@ -45,6 +46,9 @@ class Parcel {
   final int repairProgress;
   final double totalProduced;
 
+  /// Arızanın başladığı an (mekanikçinin otomatik tamiri için).
+  final int brokenAtMs;
+
   int get drillCompleteMs => drillStartMs + drillDurationMs - drillBonusMs;
 
   Parcel copyWith({
@@ -61,6 +65,7 @@ class Parcel {
     bool? broken,
     int? repairProgress,
     double? totalProduced,
+    int? brokenAtMs,
   }) {
     return Parcel(
       status: status ?? this.status,
@@ -76,6 +81,7 @@ class Parcel {
       broken: broken ?? this.broken,
       repairProgress: repairProgress ?? this.repairProgress,
       totalProduced: totalProduced ?? this.totalProduced,
+      brokenAtMs: brokenAtMs ?? this.brokenAtMs,
     );
   }
 
@@ -93,6 +99,7 @@ class Parcel {
     'br': broken,
     'rp': repairProgress,
     'tp': totalProduced,
+    'ba': brokenAtMs,
   };
 
   factory Parcel.fromJson(Map<String, dynamic> j) {
@@ -110,6 +117,7 @@ class Parcel {
       broken: j['br'] as bool? ?? false,
       repairProgress: (j['rp'] as num?)?.toInt() ?? 0,
       totalProduced: (j['tp'] as num?)?.toDouble() ?? 0,
+      brokenAtMs: (j['ba'] as num?)?.toInt() ?? 0,
     );
   }
 }

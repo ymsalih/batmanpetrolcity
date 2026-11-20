@@ -1,7 +1,9 @@
 import '../../config/game_config.dart';
+import '../economy/crew.dart';
 import 'active_effect.dart';
 import 'parcel.dart';
 import 'site_state.dart';
+import 'worker.dart';
 
 class GameStats {
   const GameStats({this.totalBarrels = 0, this.totalEarned = 0, this.wellsDrilled = 0, this.dryWells = 0});
@@ -61,6 +63,10 @@ class GameState {
     this.hapticsEnabled = true,
     this.soundEnabled = true,
     this.stats = const GameStats(),
+    this.workers = const [],
+    this.nextWorkerId = 1,
+    this.nextAutoCollectMs = 0,
+    this.lowGraphics = false,
     this.offlineReport,
   });
 
@@ -100,6 +106,29 @@ class GameState {
   final bool hapticsEnabled;
   final bool soundEnabled;
   final GameStats stats;
+
+  /// Ekip (işçiler).
+  final List<Worker> workers;
+  final int nextWorkerId;
+
+  /// Tanker şoförünün bir sonraki uğrama zamanı.
+  final int nextAutoCollectMs;
+
+  /// Pil/performans için düşük grafik modu.
+  final bool lowGraphics;
+
+  /// Ekibin toplam etkisi.
+  Crew get crew => Crew.of(workers);
+
+  int hiredCount(String roleId) => workers.where((w) => w.roleId == roleId).length;
+
+  Worker? workerById(int id) => workers.where((w) => w.id == id).firstOrNull;
+
+  /// Verilen görevdeki en kıdemli işçi (konuşma için).
+  Worker? leadOf(String roleId) {
+    final list = workers.where((w) => w.roleId == roleId).toList()..sort((a, b) => b.rank.compareTo(a.rank));
+    return list.firstOrNull;
+  }
 
   /// Geçici: kaydedilmez.
   final OfflineReport? offlineReport;
@@ -143,6 +172,10 @@ class GameState {
     bool? hapticsEnabled,
     bool? soundEnabled,
     GameStats? stats,
+    List<Worker>? workers,
+    int? nextWorkerId,
+    int? nextAutoCollectMs,
+    bool? lowGraphics,
     OfflineReport? offlineReport,
     bool clearOfflineReport = false,
   }) {
@@ -163,6 +196,10 @@ class GameState {
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       stats: stats ?? this.stats,
+      workers: workers ?? this.workers,
+      nextWorkerId: nextWorkerId ?? this.nextWorkerId,
+      nextAutoCollectMs: nextAutoCollectMs ?? this.nextAutoCollectMs,
+      lowGraphics: lowGraphics ?? this.lowGraphics,
       offlineReport: clearOfflineReport ? null : (offlineReport ?? this.offlineReport),
     );
   }
@@ -185,6 +222,10 @@ class GameState {
     'hp': hapticsEnabled,
     'snd': soundEnabled,
     'stats': stats.toJson(),
+    'wk': workers.map((w) => w.toJson()).toList(),
+    'nw': nextWorkerId,
+    'nac': nextAutoCollectMs,
+    'lg': lowGraphics,
   };
 
   /// Eski kayıtlar ve config'e sonradan eklenen sahalar için toleranslı okuma.
@@ -218,6 +259,12 @@ class GameState {
       hapticsEnabled: j['hp'] as bool? ?? true,
       soundEnabled: j['snd'] as bool? ?? true,
       stats: j['stats'] is Map ? GameStats.fromJson(Map<String, dynamic>.from(j['stats'] as Map)) : const GameStats(),
+      workers: ((j['wk'] as List?) ?? const [])
+          .map((e) => Worker.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      nextWorkerId: (j['nw'] as num?)?.toInt() ?? 1,
+      nextAutoCollectMs: (j['nac'] as num?)?.toInt() ?? 0,
+      lowGraphics: j['lg'] as bool? ?? false,
     );
   }
 }

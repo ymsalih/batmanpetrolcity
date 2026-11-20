@@ -73,11 +73,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
                       time: _anim.value * 60,
                       skyFromShader: true,
                     ),
-                    foregroundPainter: CloudShadowPainter(
-                      time: _anim.value * 60,
-                      night: dn.night,
-                      top: MapPainter.horizon,
-                    ),
+                    foregroundPainter: GraphicsMode.isLow(context)
+                        ? null
+                        : CloudShadowPainter(time: _anim.value * 60, night: dn.night, top: MapPainter.horizon),
                   ),
                 ),
               ),

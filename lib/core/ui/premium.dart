@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
+import '../utils/format.dart';
 
 /// Premium arayüz renk gradyanları.
 abstract final class Premium {
@@ -57,6 +58,34 @@ class GlassPanel extends StatelessWidget {
   final Color? borderColor;
   final Color? glow;
 
+  Widget _content(BuildContext context, BorderRadius r) {
+    // Bulanıklık mobilde pahalıdır: listelerde (blur: 0) ve düşük grafik
+    // modunda kapatılır, yerine daha opak bir zemin kullanılır.
+    final useBlur = blur > 0 && !GraphicsMode.isLow(context);
+    final o = useBlur ? opacity : (opacity + 0.22).clamp(0.0, 0.95);
+    final box = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        borderRadius: r,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(tint, Colors.white, 0.08)!.withValues(alpha: o),
+            tint.withValues(alpha: (o + 0.12).clamp(0.0, 1.0)),
+          ],
+        ),
+        border: Border.all(color: borderColor ?? Colors.white.withValues(alpha: 0.12), width: 1),
+      ),
+      child: child,
+    );
+    if (!useBlur) return box;
+    return BackdropFilter(
+      filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+      child: box,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(radius);
@@ -68,30 +97,21 @@ class GlassPanel extends StatelessWidget {
           if (glow != null) BoxShadow(color: glow!.withValues(alpha: 0.35), blurRadius: 24),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: r,
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              borderRadius: r,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(tint, Colors.white, 0.08)!.withValues(alpha: opacity),
-                  tint.withValues(alpha: opacity + 0.12),
-                ],
-              ),
-              border: Border.all(color: borderColor ?? Colors.white.withValues(alpha: 0.12), width: 1),
-            ),
-            child: child,
-          ),
-        ),
-      ),
+      child: ClipRRect(borderRadius: r, child: _content(context, r)),
     );
   }
+}
+
+/// Grafik kalitesi: düşük modda bulanıklık ve bazı efektler kapanır
+/// (pil ve eski telefonlar için).
+class GraphicsMode extends InheritedWidget {
+  const GraphicsMode({super.key, required this.low, required super.child});
+  final bool low;
+
+  static bool isLow(BuildContext context) => context.dependOnInheritedWidgetOfExactType<GraphicsMode>()?.low ?? false;
+
+  @override
+  bool updateShouldNotify(GraphicsMode old) => old.low != low;
 }
 
 /// Gradyanlı, parlama süpürmeli, basınca hafifçe küçülen premium buton.
@@ -275,7 +295,7 @@ class SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
       child: Row(
         children: [
-          Text(text.toUpperCase(), style: Premium.overline.copyWith(color: Palette.sunsetLight)),
+          Text(Fmt.upperTr(text), style: Premium.overline.copyWith(color: Palette.sunsetLight)),
           const SizedBox(width: 10),
           Expanded(
             child: Container(

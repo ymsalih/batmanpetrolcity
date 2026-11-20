@@ -21,7 +21,9 @@ class MarketScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(gameControllerProvider);
     final now = s.lastTickMs;
-    final priceMult = s.priceMultiplierAt(now);
+    final eventMult = s.priceMultiplierAt(now);
+    // Tüccar bonusu satış değerine dahil.
+    final priceMult = eventMult * s.crew.priceMultiplier;
     final history = s.priceHistory;
     final prev = history.length > 1 ? history[history.length - 2] : s.oilPrice;
     final change = prev == 0 ? 0.0 : (s.oilPrice - prev) / prev * 100;
@@ -80,13 +82,13 @@ class MarketScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (priceMult != 1)
+                if (eventMult != 1)
                   Container(
                     margin: const EdgeInsets.only(top: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(color: Palette.success, borderRadius: BorderRadius.circular(8)),
                     child: Text(
-                      'Fiyat uçtu! Satışlar x${Fmt.decimal(priceMult, 0)}',
+                      'Fiyat uçtu! Satışlar x${Fmt.decimal(eventMult, 0)}',
                       style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -149,7 +151,7 @@ class _Card extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => GlassPanel(radius: 22, child: child);
+  Widget build(BuildContext context) => GlassPanel(radius: 22, blur: 0, child: child);
 }
 
 class _SellCard extends ConsumerWidget {

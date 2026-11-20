@@ -134,6 +134,7 @@ class GlassNavBar extends ConsumerWidget {
   static const _items = [
     (AppTab.map, Icons.map_outlined, Icons.map, 'Harita'),
     (AppTab.site, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Saha'),
+    (AppTab.crew, Icons.groups_outlined, Icons.groups, 'Ekip'),
     (AppTab.market, Icons.storefront_outlined, Icons.storefront, 'Pazar'),
     (AppTab.settings, Icons.settings_outlined, Icons.settings, 'Ayarlar'),
   ];

@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/game_config.dart';
+import '../economy/crew.dart';
 import '../economy/economy.dart';
 import '../models/active_effect.dart';
 import '../models/game_state.dart';
 import '../models/parcel.dart';
+import '../models/worker.dart';
 import '../persistence/save_repository.dart';
 import '../services/services.dart';
 import 'game_events.dart';
@@ -124,7 +126,8 @@ class GameController extends Notifier<GameState> {
     if (p.status != ParcelStatus.empty) return ActionResult.invalid;
     if (!_spend(cfg.drillCost)) return ActionResult.notEnoughMoney;
     final tier = p.tier ?? Economy.rollTier(_rng);
-    final willStrike = _rng.nextDouble() >= Economy.dryChance(cfg, tier);
+    final crew = state.crew;
+    final willStrike = _rng.nextDouble() >= Economy.dryChance(cfg, tier) * crew.dryMultiplier;
     state = state
         .updateParcel(
           siteId,
@@ -134,7 +137,7 @@ class GameController extends Notifier<GameState> {
             tier: tier,
             willStrike: willStrike,
             drillStartMs: now,
-            drillDurationMs: Economy.drillDurationMs(cfg),
+            drillDurationMs: (Economy.drillDurationMs(cfg) * crew.drillTimeMultiplier).round(),
             drillBonusMs: 0,
           ),
         )
@@ -148,7 +151,8 @@ class GameController extends Notifier<GameState> {
     if (p.status != ParcelStatus.drilling) return false;
     final maxBonus = Economy.maxDrillBonusMs(p.drillDurationMs);
     if (p.drillBonusMs >= maxBonus) return false;
-    final bonus = min(maxBonus, p.drillBonusMs + Economy.drillTapBonusMs(p.drillDurationMs));
+    final tap = (Economy.drillTapBonusMs(p.drillDurationMs) * state.crew.tapMultiplier).round();
+    final bonus = min(maxBonus, p.drillBonusMs + tap);
     state = state.updateParcel(siteId, index, p.copyWith(drillBonusMs: bonus));
     if (now >= p.copyWith(drillBonusMs: bonus).drillCompleteMs) tick();
     return true;
@@ -218,7 +222,11 @@ class GameController extends Notifier<GameState> {
   double sellCrude(double barrels) {
     final amount = min(barrels, state.crude).floorToDouble();
     if (amount <= 0) return 0;
-    final money = Economy.saleValue(amount, state.oilPrice, priceMultiplier: state.priceMultiplierAt(now));
+    final money = Economy.saleValue(
+      amount,
+      state.oilPrice,
+      priceMultiplier: state.priceMultiplierAt(now) * state.crew.priceMultiplier,
+    );
     state = state.copyWith(
       crude: state.crude - amount,
       money: state.money + money,
@@ -234,7 +242,7 @@ class GameController extends Notifier<GameState> {
     final money = Economy.saleValue(
       amount,
       Economy.refinedPrice(state.oilPrice),
-      priceMultiplier: state.priceMultiplierAt(now),
+      priceMultiplier: state.priceMultiplierAt(now) * state.crew.priceMultiplier,
     );
     state = state.copyWith(
       refined: state.refined - amount,
@@ -255,6 +263,49 @@ class GameController extends Notifier<GameState> {
     if (!_spend(Economy.refineCost(amount))) return ActionResult.notEnoughMoney;
     state = state.copyWith(crude: state.crude - amount, refined: state.refined + amount * GameConfig.refinedPerBarrel);
     return ActionResult.ok;
+  }
+
+  // ------------------------------------------------------------ Ekip
+
+  /// Görevden yeni bir işçi alır.
+  ActionResult hire(String roleId) {
+    final role = GameConfig.crewRole(roleId);
+    final count = state.hiredCount(roleId);
+    if (count >= role.maxCount) return ActionResult.maxLevel;
+    if (!_spend(Crew.hireCost(role, count))) return ActionResult.notEnoughMoney;
+    final usedNumbers = state.workers.where((w) => w.roleId == roleId).map((w) => w.number).toSet();
+    var number = 1;
+    while (usedNumbers.contains(number)) {
+      number++;
+    }
+    final worker = Worker(id: state.nextWorkerId, roleId: roleId, number: number, hiredAtMs: now);
+    state = state.copyWith(workers: [...state.workers, worker], nextWorkerId: state.nextWorkerId + 1);
+    _emit(CrewChanged(worker.id));
+    return ActionResult.ok;
+  }
+
+  /// İşçiyi bir üst rütbeye terfi ettirir.
+  ActionResult promote(int workerId) {
+    final w = state.workerById(workerId);
+    if (w == null) return ActionResult.invalid;
+    if (w.isMaxRank) return ActionResult.maxLevel;
+    if (!_spend(Crew.promoteCost(w))) return ActionResult.notEnoughMoney;
+    _replaceWorker(w.copyWith(rank: w.rank + 1));
+    _emit(CrewChanged(w.id, promoted: true));
+    return ActionResult.ok;
+  }
+
+  /// İşçiye isim verir. Boş isim görev adına geri döner.
+  void rename(int workerId, String name) {
+    final w = state.workerById(workerId);
+    if (w == null) return;
+    final clean = name.trim();
+    final limited = clean.length > Worker.maxNameLength ? clean.substring(0, Worker.maxNameLength) : clean;
+    _replaceWorker(limited.isEmpty ? w.copyWith(clearName: true) : w.copyWith(name: limited));
+  }
+
+  void _replaceWorker(Worker w) {
+    state = state.copyWith(workers: [for (final x in state.workers) x.id == w.id ? w : x]);
   }
 
   // ------------------------------------------------------- Etkiler
@@ -307,6 +358,8 @@ class GameController extends Notifier<GameState> {
   void setHaptics(bool v) => state = state.copyWith(hapticsEnabled: v);
 
   void setSound(bool v) => state = state.copyWith(soundEnabled: v);
+
+  void setLowGraphics(bool v) => state = state.copyWith(lowGraphics: v);
 
   Future<void> resetGame() async {
     await _repo.clear();

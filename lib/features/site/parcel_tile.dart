@@ -152,14 +152,20 @@ class ParcelTile extends ConsumerWidget {
             ),
           ),
           Positioned(
-            right: 2,
+            right: 0,
             top: 0,
+            // Mobilde parmakla rahat basılsın: 40x40 dokunma alanı.
             child: GestureDetector(
               key: Key('well_settings_${siteId}_$index'),
+              behavior: HitTestBehavior.opaque,
               onTap: () => showWellSheet(context, siteId, index),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.tune, size: 16, color: Colors.white70),
+              child: const SizedBox(
+                width: 40,
+                height: 40,
+                child: Align(
+                  alignment: Alignment(0.6, -0.6),
+                  child: Icon(Icons.tune, size: 18, color: Colors.white70),
+                ),
               ),
             ),
           ),

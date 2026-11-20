@@ -5,9 +5,11 @@ import 'config/game_config.dart';
 import 'config/palette.dart';
 import 'core/game/game_controller.dart';
 import 'core/navigation.dart';
+import 'core/ui/premium.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
 import 'core/widgets/hud.dart';
+import 'features/crew/crew_screen.dart';
 import 'features/events/effects_bar.dart';
 import 'features/events/offline_dialog.dart';
 import 'features/intro/intro_gate.dart';
@@ -62,13 +64,15 @@ class PetrolAgasiApp extends StatelessWidget {
         ),
       ),
       // Efekt katmanı ve Usta balonu Navigator'ın üstünde: tüm ekranlarda görünür.
-      builder: (context, child) => EffectLayer(
-        child: Stack(
-          children: [
-            child!,
-            const Positioned.fill(child: _HeatLayer()),
-            const Positioned(left: 8, right: 8, bottom: 88, child: UstaBubble()),
-          ],
+      builder: (context, child) => _GraphicsScope(
+        child: EffectLayer(
+          child: Stack(
+            children: [
+              child!,
+              const Positioned.fill(child: _HeatLayer()),
+              const Positioned(left: 8, right: 8, bottom: 88, child: UstaBubble()),
+            ],
+          ),
         ),
       ),
       home: const IntroGate(child: GameShell()),
@@ -125,7 +129,7 @@ class _GameShellState extends ConsumerState<GameShell> {
               data: mq.copyWith(padding: contentPadding),
               child: IndexedStack(
                 index: tab.index,
-                children: const [MapScreen(), SiteScreen(), MarketScreen(), SettingsScreen()],
+                children: const [MapScreen(), SiteScreen(), CrewScreen(), MarketScreen(), SettingsScreen()],
               ),
             ),
           ),
@@ -153,5 +157,17 @@ class _HeatLayer extends ConsumerWidget {
     );
     if (!active) return const SizedBox.shrink();
     return const HeatHazeOverlay(strength: 1);
+  }
+}
+
+/// Oyuncunun grafik ayarını alt ağaca iletir.
+class _GraphicsScope extends ConsumerWidget {
+  const _GraphicsScope({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final low = ref.watch(gameControllerProvider.select((s) => s.lowGraphics));
+    return GraphicsMode(low: low, child: child);
   }
 }

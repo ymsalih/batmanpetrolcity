@@ -1,5 +1,11 @@
 /// Türkçe sayı ve süre biçimlendirme (intl paketine gerek kalmadan).
 abstract final class Fmt {
+  /// Türkçe büyük harf: i → İ, ı → I (Dart'ın toUpperCase'i dil bilmez).
+  static String upperTr(String s) => s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
+
+  /// Türkçe küçük harf: I → ı, İ → i.
+  static String lowerTr(String s) => s.replaceAll('I', 'ı').replaceAll('İ', 'i').toLowerCase();
+
   /// 12345 → "12.345"
   static String integer(num value) {
     final negative = value < 0;

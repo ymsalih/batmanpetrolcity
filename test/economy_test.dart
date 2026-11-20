@@ -123,6 +123,8 @@ void main() {
       expect(Fmt.compact(2500000), '2,50 Mn');
       expect(Fmt.decimal(3.14159, 2), '3,14');
       expect(Fmt.money(1500), '1.500 ₺');
+      expect(Fmt.upperTr('Ekibin işe alım'), 'EKİBİN İŞE ALIM');
+      expect(Fmt.lowerTr('IŞIK İZİ'), 'ışık izi');
     });
   });
 }

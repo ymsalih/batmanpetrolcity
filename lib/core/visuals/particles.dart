@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
+import '../ui/premium.dart';
 
 enum ParticleKind { droplet, splash, mist, mud }
 
@@ -107,6 +108,7 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
   double _elapsed = 0;
   double _spawnAcc = 0;
   double _mistAcc = 0;
+  bool _low = false;
 
   @override
   void initState() {
@@ -134,7 +136,8 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
     final rng = sim.rng;
     final wind = 30 * sin(_elapsed * 0.6);
 
-    _spawnAcc += dt * 320;
+    // Düşük grafik modunda daha az parçacık.
+    _spawnAcc += dt * (_low ? 130 : 320);
     while (_spawnAcc >= 1) {
       _spawnAcc -= 1;
       final mud = _elapsed < 0.7 && rng.nextDouble() < 0.6;
@@ -179,6 +182,7 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    _low = GraphicsMode.isLow(context);
     return LayoutBuilder(
       builder: (context, box) {
         _size = box.biggest;

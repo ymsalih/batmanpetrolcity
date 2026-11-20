@@ -48,3 +48,23 @@ class Sold extends GameEvent {
   final double amount;
   final double money;
 }
+
+/// Mekanikçi bir kuyuyu kendiliğinden tamir etti.
+class AutoRepaired extends GameEvent {
+  const AutoRepaired(this.siteId, this.index);
+  final String siteId;
+  final int index;
+}
+
+/// Tanker şoförü depolardan ham petrol topladı.
+class AutoCollected extends GameEvent {
+  const AutoCollected(this.amount);
+  final double amount;
+}
+
+/// Ekibe yeni biri katıldı veya terfi etti.
+class CrewChanged extends GameEvent {
+  const CrewChanged(this.workerId, {this.promoted = false});
+  final int workerId;
+  final bool promoted;
+}

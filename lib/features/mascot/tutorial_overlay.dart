@@ -34,7 +34,7 @@ const tutorialSteps = [
   ),
   TutorialStep(
     AppTab.site,
-    'Petrol çıkarsa at kafası kurulur ve varil üretir. Depo dolunca kuyuya dokun, topla. Kuru çıkarsa da üzülme, olur öyle.',
+    'Petrol çıkarsa at kafası kurulur ve varil üretir. Depo dolunca kuyuya dokun, topla. Ekip sekmesinden sondör, derikmen, şoför al; her birinin görevi ve rütbesi var, iş kendiliğinden yürür.',
     UstaMood.happy,
   ),
   TutorialStep(

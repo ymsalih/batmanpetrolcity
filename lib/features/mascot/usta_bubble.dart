@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
+import '../../core/game/game_controller.dart';
+import '../crew/worker_avatar.dart';
 import 'usta_avatar.dart';
 import 'usta_controller.dart';
 
@@ -14,9 +16,19 @@ class UstaBubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final msg = ref.watch(ustaProvider);
     if (msg == null) return const SizedBox.shrink();
+    final worker = msg.workerId == null
+        ? null
+        : ref.watch(gameControllerProvider.select((s) => s.workerById(msg.workerId!)));
     return GestureDetector(
           onTap: () => ref.read(ustaProvider.notifier).dismiss(),
-          child: UstaSpeech(text: msg.text, mood: msg.mood),
+          child: UstaSpeech(
+            text: msg.text,
+            mood: msg.mood,
+            speakerName: worker?.displayName,
+            // İsim verilmemişse ad zaten görev adıdır; tekrar etmesin.
+            speakerSubtitle: worker == null ? null : (worker.name == null ? worker.rankTitle : worker.subtitle),
+            avatar: worker == null ? null : WorkerAvatar(worker: worker, mood: msg.mood),
+          ),
         )
         .animate(key: ValueKey(msg.id))
         .slideY(begin: 0.6, end: 0, duration: 260.ms, curve: Curves.easeOutBack)
@@ -25,7 +37,21 @@ class UstaBubble extends ConsumerWidget {
 }
 
 class UstaSpeech extends StatelessWidget {
-  const UstaSpeech({super.key, required this.text, this.mood = UstaMood.happy, this.avatarSize = 56, this.footer});
+  const UstaSpeech({
+    super.key,
+    required this.text,
+    this.mood = UstaMood.happy,
+    this.avatarSize = 56,
+    this.footer,
+    this.speakerName,
+    this.speakerSubtitle,
+    this.avatar,
+  });
+
+  /// Konuşan işçinin adı; null ise Usta.
+  final String? speakerName;
+  final String? speakerSubtitle;
+  final Widget? avatar;
   final String text;
   final UstaMood mood;
   final double avatarSize;
@@ -41,7 +67,7 @@ class UstaSpeech extends StatelessWidget {
           SizedBox(
             width: avatarSize,
             height: avatarSize,
-            child: UstaAvatar(mood: mood),
+            child: avatar ?? UstaAvatar(mood: mood),
           ),
           const SizedBox(width: 6),
           Flexible(
@@ -62,9 +88,20 @@ class UstaSpeech extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Usta',
-                    style: TextStyle(color: Palette.sunset, fontWeight: FontWeight.w900, fontSize: 12),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: speakerName ?? 'Usta',
+                          style: const TextStyle(color: Palette.sunset, fontWeight: FontWeight.w900, fontSize: 12),
+                        ),
+                        if (speakerSubtitle != null)
+                          TextSpan(
+                            text: '  ·  $speakerSubtitle',
+                            style: const TextStyle(color: Palette.earth, fontWeight: FontWeight.w600, fontSize: 11),
+                          ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(text, style: const TextStyle(color: Palette.oil, fontSize: 15, height: 1.25)),

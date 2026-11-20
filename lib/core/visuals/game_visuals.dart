@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'painters/derrick_painter.dart';
 import 'painters/pumpjack_painter.dart';
 import 'painters/usta_painter.dart';
+import 'painters/worker_painter.dart';
 import 'particles.dart';
 
 /// Oyunun animasyonlu görsellerinin tek giriş noktası.
@@ -21,6 +22,7 @@ abstract class GameVisuals {
   Widget derrick({bool drilling = true, bool lightsOn = false, double night = 0});
   Widget gusher({Offset origin = const Offset(0.5, 0.9), double groundY = 0.92, double intensity = 1});
   Widget mascot({int mood = 0});
+  Widget worker({required int seed, required Color helmetColor, int rank = 0, int mood = 0});
 }
 
 final gameVisualsProvider = Provider<GameVisuals>((ref) => const PainterGameVisuals());
@@ -59,6 +61,18 @@ class PainterGameVisuals extends GameVisuals {
       final blink = t > 0.94 ? sin((t - 0.94) / 0.06 * pi) : 0.0;
       return CustomPaint(
         painter: UstaPainter(mood: mood, blink: blink),
+      );
+    },
+  );
+
+  @override
+  Widget worker({required int seed, required Color helmetColor, int rank = 0, int mood = 0}) => _Looping(
+    // Her işçi farklı zamanda göz kırpar.
+    period: Duration(milliseconds: 3000 + (seed * 377) % 2500),
+    builder: (t, _) {
+      final blink = t > 0.95 ? sin((t - 0.95) / 0.05 * pi) : 0.0;
+      return CustomPaint(
+        painter: WorkerPainter(seed: seed, helmetColor: helmetColor, rank: rank, mood: mood, blink: blink),
       );
     },
   );

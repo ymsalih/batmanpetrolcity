@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum AppTab { map, site, market, settings }
+enum AppTab { map, site, crew, market, settings }
 
 final navProvider = NotifierProvider<NavController, AppTab>(NavController.new);
 

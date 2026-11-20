@@ -86,6 +86,66 @@ class SiteConfig {
   }
 }
 
+/// İşçinin oyuna etkisi.
+enum CrewSkill {
+  /// Sondaj süresini kısaltır.
+  drillSpeed,
+
+  /// Ekrana dokunuşun sondajı hızlandırma gücünü artırır.
+  tapPower,
+
+  /// Kuru kuyu ihtimalini düşürür.
+  dryChance,
+
+  /// Üretimi artırır.
+  production,
+
+  /// Arızalı kuyuları kendiliğinden tamir eder.
+  autoRepair,
+
+  /// Kuyu depolarını düzenli aralıklarla boşaltır.
+  autoCollect,
+
+  /// Satış fiyatını artırır.
+  price,
+}
+
+/// Bir ekip görevi (rolü). Yeni görev eklemek için [GameConfig.crewRoles]
+/// listesine satır eklemek yeterlidir.
+class CrewRoleConfig {
+  const CrewRoleConfig({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.skill,
+    required this.perRank,
+    required this.hireCost,
+    required this.helmetColor,
+    this.base = 0,
+    this.maxCount = 1,
+  });
+
+  final String id;
+
+  /// Görev adı; işçiye isim verilmezse varsayılan ad olarak da kullanılır.
+  final String title;
+  final String description;
+  final CrewSkill skill;
+
+  /// Rütbe başına etki (oran veya saniye; [skill]'e göre).
+  final double perRank;
+
+  /// Süre tabanlı yetenekler için başlangıç değeri (sn).
+  final double base;
+  final double hireCost;
+
+  /// Aynı görevden en fazla kaç kişi alınabilir.
+  final int maxCount;
+
+  /// Baret rengi (ARGB).
+  final int helmetColor;
+}
+
 enum GameEventKind { heatWave, priceSpike, breakdown }
 
 class EventConfig {
@@ -311,6 +371,99 @@ abstract final class GameConfig {
       unlocksRefinery: true,
     ),
   ];
+
+  // ---------------------------------------------------------------- Ekip
+  /// Rütbeler (düşükten yükseğe). Rütbe yükseldikçe görev etkisi büyür.
+  static const List<String> crewRanks = ['Çırak', 'Kalfa', 'Usta', 'Ustabaşı', 'Şef'];
+
+  /// Terfi bedeli = işe alma bedeli x büyüme^(mevcut rütbe + 1).
+  static const double crewPromoteGrowth = 2.2;
+
+  /// Aynı görevden ikinci, üçüncü... kişiyi almak her seferinde pahalanır.
+  static const double crewHireGrowth = 1.7;
+
+  /// Ekibin konuşma olasılığı (olay başına); kalan durumlarda Usta konuşur.
+  static const double crewTalkChance = 0.65;
+
+  static const List<CrewRoleConfig> crewRoles = [
+    CrewRoleConfig(
+      id: 'sondor',
+      title: 'Sondör',
+      description: 'Sondajı yönetir. Sondaj süresini kısaltır.',
+      skill: CrewSkill.drillSpeed,
+      perRank: 0.08,
+      hireCost: 1200,
+      helmetColor: 0xFFF5C542,
+    ),
+    CrewRoleConfig(
+      id: 'derikmen',
+      title: 'Derikmen',
+      description: 'Kule tepesinde boruları dizer. Dokunuşların sondajı daha çok hızlandırır.',
+      skill: CrewSkill.tapPower,
+      perRank: 0.3,
+      hireCost: 900,
+      helmetColor: 0xFFFFFFFF,
+    ),
+    CrewRoleConfig(
+      id: 'jeolog',
+      title: 'Jeolog',
+      description: 'Katmanları okur. Kuru kuyu ihtimalini düşürür.',
+      skill: CrewSkill.dryChance,
+      perRank: 0.07,
+      hireCost: 2500,
+      helmetColor: 0xFF3D8BC9,
+    ),
+    CrewRoleConfig(
+      id: 'pompaci',
+      title: 'Pompacı',
+      description: 'At kafalarının bakımını yapar. Üretimi artırır.',
+      skill: CrewSkill.production,
+      perRank: 0.08,
+      hireCost: 3000,
+      helmetColor: 0xFFF07A2A,
+    ),
+    CrewRoleConfig(
+      id: 'mekanik',
+      title: 'Mekanikçi',
+      description: 'Arızalanan kuyuları sen dokunmadan tamir eder.',
+      skill: CrewSkill.autoRepair,
+      base: 75,
+      perRank: 12,
+      hireCost: 4000,
+      helmetColor: 0xFF3FAE5A,
+    ),
+    CrewRoleConfig(
+      id: 'sofor',
+      title: 'Tanker Şoförü',
+      description: 'Kuyu depolarını düzenli boşaltıp ham petrolü getirir. Sen yokken de çalışır.',
+      skill: CrewSkill.autoCollect,
+      base: 90,
+      perRank: 12,
+      hireCost: 6000,
+      helmetColor: 0xFF8E5BC2,
+    ),
+    CrewRoleConfig(
+      id: 'tuccar',
+      title: 'Tüccar',
+      description: 'Pazarda iyi pazarlık yapar. Satış fiyatını artırır.',
+      skill: CrewSkill.price,
+      perRank: 0.05,
+      hireCost: 8000,
+      helmetColor: 0xFF2B2622,
+    ),
+    CrewRoleConfig(
+      id: 'isci',
+      title: 'İşçi',
+      description: 'Sahada her işe koşar. Üretime küçük ama sürekli katkı verir.',
+      skill: CrewSkill.production,
+      perRank: 0.03,
+      hireCost: 600,
+      maxCount: 6,
+      helmetColor: 0xFFD64541,
+    ),
+  ];
+
+  static CrewRoleConfig crewRole(String id) => crewRoles.firstWhere((r) => r.id == id, orElse: () => crewRoles.last);
 
   static SiteConfig site(String id) => sites.firstWhere((s) => s.id == id, orElse: () => sites.first);
 

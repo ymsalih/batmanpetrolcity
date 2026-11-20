@@ -25,7 +25,10 @@ abstract final class Simulation {
     if (nowMs <= fromMs) return SimulationResult(s, const [], 0, 0, false);
 
     final events = <GameEvent>[];
-    final prodMult = _effectiveProductionMultiplier(s.effects, fromMs, nowMs);
+    final crew = s.crew;
+    final prodMult = _effectiveProductionMultiplier(s.effects, fromMs, nowMs) * crew.productionMultiplier;
+    final collectMs = crew.autoCollectSeconds == null ? null : (crew.autoCollectSeconds! * 1000).round();
+    final repairMs = crew.autoRepairSeconds == null ? null : (crew.autoRepairSeconds! * 1000).round();
     var produced = 0.0;
     var drillsFinished = 0;
     var anyFull = false;
@@ -55,8 +58,20 @@ abstract final class Simulation {
           );
         }
 
+        // Mekanikçi arızayı kendisi tamir eder.
+        if (p.broken && repairMs != null && nowMs - p.brokenAtMs >= repairMs) {
+          p = p.copyWith(broken: false, repairProgress: 0);
+          changed = true;
+          events.add(AutoRepaired(cfg.id, i));
+        }
+
         if (p.status == ParcelStatus.producing && !p.broken) {
-          final cap = Economy.storageCapacity(cfg, p);
+          var cap = Economy.storageCapacity(cfg, p);
+          // Tanker şoförü uzun aralıklarda (ör. çevrimdışı) depoyu defalarca
+          // boşaltır: depo sınırı uğrama sayısı kadar genişler.
+          if (collectMs != null && nowMs - producingFrom > collectMs) {
+            cap *= 1 + (nowMs - producingFrom) / collectMs;
+          }
           final rate = Economy.productionPerSecond(cfg, p, effectMultiplier: prodMult);
           final next = Economy.fillStorage(
             stored: p.stored,
@@ -69,7 +84,7 @@ abstract final class Simulation {
             produced += delta;
             p = p.copyWith(stored: next, totalProduced: p.totalProduced + delta);
             changed = true;
-            if (next >= cap) {
+            if (next >= cap && collectMs == null) {
               anyFull = true;
               events.add(StorageFull(cfg.id, i));
             }
@@ -78,6 +93,31 @@ abstract final class Simulation {
         parcels.add(p);
       }
       sites[entry.key] = changed ? entry.value.copyWith(parcels: parcels) : entry.value;
+    }
+
+    // Tanker şoförü: depoları boşaltıp ham petrolü getirir.
+    var crude = s.crude;
+    var nextCollect = s.nextAutoCollectMs;
+    if (collectMs != null) {
+      if (nextCollect <= 0) nextCollect = nowMs + collectMs;
+      if (nowMs >= nextCollect) {
+        var picked = 0.0;
+        for (final entry in sites.entries.toList()) {
+          final parcels = [...entry.value.parcels];
+          var changed = false;
+          for (var k = 0; k < parcels.length; k++) {
+            final amount = parcels[k].stored.floorToDouble();
+            if (amount < 1) continue;
+            picked += amount;
+            parcels[k] = parcels[k].copyWith(stored: parcels[k].stored - amount);
+            changed = true;
+          }
+          if (changed) sites[entry.key] = entry.value.copyWith(parcels: parcels);
+        }
+        crude += picked;
+        nextCollect = nowMs + collectMs;
+        if (picked > 0) events.add(AutoCollected(picked));
+      }
     }
 
     // Süresi biten etkiler.
@@ -110,6 +150,8 @@ abstract final class Simulation {
 
     var next = s.copyWith(
       sites: sites,
+      crude: crude,
+      nextAutoCollectMs: nextCollect,
       effects: effects,
       oilPrice: price,
       priceHistory: history,
@@ -147,7 +189,7 @@ abstract final class Simulation {
           .toList();
       if (candidates.isEmpty) return (s, null);
       final pick = candidates[rng.nextInt(candidates.length)];
-      final broken = pick.parcel.copyWith(broken: true, repairProgress: 0);
+      final broken = pick.parcel.copyWith(broken: true, repairProgress: 0, brokenAtMs: nowMs);
       return (
         s.updateParcel(pick.siteId, pick.index, broken),
         RandomEventStarted(cfg, siteId: pick.siteId, index: pick.index),

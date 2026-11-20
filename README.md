@@ -53,6 +53,35 @@ Shader'lar `ShaderSlot` ile widget başına kalıcı tutulur. Her çizimde yeni 
 - **Premium butonlar** (`core/ui/premium.dart`): gradyan, üst parlama, periyodik ışık süpürmesi, basınca küçülme.
 - **Cam kartlar**, altın gradyanlı başlıklar, ince altın çizgili bölüm başlıkları, yumuşak solma + yakınlaşma sayfa geçişi, cam üst barlı sondaj ekranı.
 
+## Ekip (işçiler)
+
+Usta'nın yanında sahada bir ekip çalışır. Her işçinin bir **görevi** ve **rütbesi** vardır
+(Çırak → Kalfa → Usta → Ustabaşı → Şef). Rütbe yükseldikçe görevini daha iyi yapar.
+
+| Görev | Etki |
+|---|---|
+| Sondör | Sondaj süresini kısaltır |
+| Derikmen | Dokunuşların sondajı hızlandırma gücünü artırır |
+| Jeolog | Kuru kuyu ihtimalini düşürür |
+| Pompacı | Üretimi artırır |
+| Mekanikçi | Arızalı kuyuları kendiliğinden tamir eder |
+| Tanker Şoförü | Depoları düzenli boşaltır (çevrimdışıyken de) |
+| Tüccar | Satış fiyatını artırır |
+| İşçi (6 kişiye kadar) | Üretime küçük katkı |
+
+- İsim verilmezse görev adı kullanılır (ör. "Derikmen", "İşçi 2"); oyuncu kalem ikonuyla isim verebilir (en fazla 18 karakter).
+- İşçiler olaylara görevlerine göre Batman ağzıyla tepki verir; ekip kartında avatara dokununca sohbet eder.
+- Görev, rütbe, bedel ve etkiler `GameConfig.crewRoles` / `crewRanks` içindedir; yeni görev eklemek tek satırdır.
+- Saf hesaplamalar `core/economy/crew.dart` içindedir ve unit testlidir.
+
+## Mobil öncelik
+
+- Dikey ekran kilidi, kenardan kenara çizim, şeffaf durum çubuğu (Android/iOS); web manifest'te `portrait-primary`.
+- Tüm butonlarda en az 48 dp dokunma alanı (kuyu ayar ikonu 40x40'a büyütüldü).
+- Ayarlar → **Pil tasarrufu (düşük grafik)**: bulanıklık, bulut gölgeleri ve fışkırma parçacıkları azalır.
+- Pahalı shader'lar önbelleklenir; uzun listelerdeki cam kartlar bulanıklık kullanmaz.
+- Güvenli alanlar (çentik, alt çubuk) içerik boşluklarına dahildir; 360 px genişlikte test edildi.
+
 ## Ses
 
 `core/services/synth.dart` tüm ses efektlerini (ve rüzgâr + motor uğultulu ortam döngüsünü) dosya kullanmadan matematiksel olarak WAV'a dönüştürür. Çalmak için bir ses paketi (ör. `audioplayers`) eklenip `AudioService` uygulanır; tetikleme noktaları hazırdır.
