@@ -37,9 +37,13 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
   int _taps = 0;
   bool _sawDrilling = false;
   double? _resultAt;
+  final _oilSlot = ShaderSlot();
+  final _geoSlot = ShaderSlot();
 
   @override
   void dispose() {
+    _oilSlot.dispose();
+    _geoSlot.dispose();
     _anim.dispose();
     super.dispose();
   }
@@ -141,7 +145,8 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
                               lightsOn: dayNight.lightsOn,
                               night: dayNight.night,
                               oilRise: oilRise,
-                              oilProgram: ref.read(shaderBankProvider).oilSheen,
+                              oilShader: _oilSlot.of(ref.read(shaderBankProvider).oilSheen),
+                              geoShader: _geoSlot.of(ref.read(shaderBankProvider).geology),
                             ),
                           ),
                         ),

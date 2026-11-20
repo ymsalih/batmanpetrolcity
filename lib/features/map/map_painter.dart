@@ -44,23 +44,25 @@ class MapPainter extends CustomPainter {
     }
     _paintSunMoon(canvas, size, horizonY);
 
-    // Raman Dağı silüeti
-    final ridge = Path()..moveTo(0, horizonY);
-    const peaks = [0.0, 0.35, 0.55, 0.95, 0.7, 1.0, 0.6, 0.4, 0.75, 0.5, 0.3, 0.2];
-    for (var i = 0; i < peaks.length; i++) {
-      ridge.lineTo(w * i / (peaks.length - 1), horizonY - h * 0.11 * peaks[i]);
+    if (!skyFromShader) {
+      // Raman Dağı silüeti
+      final ridge = Path()..moveTo(0, horizonY);
+      const peaks = [0.0, 0.35, 0.55, 0.95, 0.7, 1.0, 0.6, 0.4, 0.75, 0.5, 0.3, 0.2];
+      for (var i = 0; i < peaks.length; i++) {
+        ridge.lineTo(w * i / (peaks.length - 1), horizonY - h * 0.11 * peaks[i]);
+      }
+      ridge
+        ..lineTo(w, horizonY)
+        ..close();
+      canvas.drawPath(ridge, Paint()..color = dn.shade(Palette.mountain));
+      // Karlı/aydınlık tepeler
+      final light = Path()
+        ..moveTo(w * 3 / 11 - w * 0.03, horizonY - h * 0.11 * 0.80)
+        ..lineTo(w * 3 / 11, horizonY - h * 0.11 * 0.95)
+        ..lineTo(w * 3 / 11 + w * 0.035, horizonY - h * 0.11 * 0.78)
+        ..close();
+      canvas.drawPath(light, Paint()..color = dn.shade(const Color(0xFFB59A80)));
     }
-    ridge
-      ..lineTo(w, horizonY)
-      ..close();
-    canvas.drawPath(ridge, Paint()..color = dn.shade(Palette.mountain));
-    // Karlı/aydınlık tepeler
-    final light = Path()
-      ..moveTo(w * 3 / 11 - w * 0.03, horizonY - h * 0.11 * 0.80)
-      ..lineTo(w * 3 / 11, horizonY - h * 0.11 * 0.95)
-      ..lineTo(w * 3 / 11 + w * 0.035, horizonY - h * 0.11 * 0.78)
-      ..close();
-    canvas.drawPath(light, Paint()..color = dn.shade(const Color(0xFFB59A80)));
     _text(
       canvas,
       'RAMAN DAĞI',
@@ -70,21 +72,25 @@ class MapPainter extends CustomPainter {
       letterSpacing: 2,
     );
 
-    // Ova
-    final land = Rect.fromLTWH(0, horizonY, w, h - horizonY);
-    canvas.drawRect(
-      land,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [dn.shade(const Color(0xFFC9A273)), dn.shade(const Color(0xFFA77A4C))],
-        ).createShader(land),
-    );
+    // Ova (shader yoksa düz gradyan; varsa altındaki toprak shader'ı görünür)
+    if (!skyFromShader) {
+      final land = Rect.fromLTWH(0, horizonY, w, h - horizonY);
+      canvas.drawRect(
+        land,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [dn.shade(const Color(0xFFC9A273)), dn.shade(const Color(0xFFA77A4C))],
+          ).createShader(land),
+      );
+    }
     final rng = Random(3);
     final field = Paint();
     for (var i = 0; i < 26; i++) {
-      field.color = dn.shade(i.isEven ? const Color(0xFFB8925F) : const Color(0xFF9E8A4E)).withValues(alpha: 0.5);
+      field.color = dn
+          .shade(i.isEven ? const Color(0xFFB8925F) : const Color(0xFF8E8A4E))
+          .withValues(alpha: skyFromShader ? 0.1 : 0.5);
       final r = Rect.fromLTWH(
         rng.nextDouble() * w,
         horizonY + rng.nextDouble() * (h - horizonY),

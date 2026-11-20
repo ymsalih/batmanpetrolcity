@@ -65,6 +65,9 @@ flutter:
     - shaders/sky.frag
     - shaders/heat_haze.frag
     - shaders/oil_sheen.frag
+    - shaders/landscape.frag
+    - shaders/soil.frag
+    - shaders/geology.frag
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -23,9 +23,35 @@ class LandscapeBackdrop extends ConsumerStatefulWidget {
 }
 
 class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with SingleTickerProviderStateMixin, TimeTicker {
+  final _slot = ShaderSlot();
+
+  @override
+  void dispose() {
+    _slot.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dn = ref.watch(dayNightProvider);
+    final program = ref.watch(shaderBankProvider).landscape;
+    if (program != null) {
+      // Premium yol: tüm manzara tek shader'da, üstünde canlı detaylar.
+      return RepaintBoundary(
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: LandscapePainter(
+            shader: _slot.of(program)!,
+            dayNight: dn,
+            time: seconds,
+            seed: widget.seed.toDouble(),
+            parallax: widget.parallax,
+          ),
+          foregroundPainter: _LifePainter(dn: dn, time: seconds, seed: widget.seed),
+        ),
+      );
+    }
+    // Yedek: gradyan gökyüzü + vektör tepeler.
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -38,6 +64,205 @@ class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with Sing
       ],
     );
   }
+}
+
+/// Manzara shader'ını çizer.
+class LandscapePainter extends CustomPainter {
+  LandscapePainter({
+    required this.shader,
+    required this.dayNight,
+    required this.time,
+    required this.seed,
+    required this.parallax,
+  });
+
+  final ui.FragmentShader shader;
+  final DayNight dayNight;
+  final double time;
+  final double seed;
+  final double parallax;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sun = dayNight.sunPosition;
+    shader
+      ..setFloat(0, size.width)
+      ..setFloat(1, size.height)
+      ..setFloat(2, time)
+      ..setFloat(3, dayNight.skyTop.r)
+      ..setFloat(4, dayNight.skyTop.g)
+      ..setFloat(5, dayNight.skyTop.b)
+      ..setFloat(6, dayNight.skyBottom.r)
+      ..setFloat(7, dayNight.skyBottom.g)
+      ..setFloat(8, dayNight.skyBottom.b)
+      ..setFloat(9, dayNight.night)
+      ..setFloat(10, dayNight.dusk)
+      ..setFloat(11, sun.dx)
+      ..setFloat(12, sun.dy)
+      ..setFloat(13, seed)
+      ..setFloat(14, parallax);
+    canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+  }
+
+  @override
+  bool shouldRepaint(LandscapePainter old) => old.time != time || old.dayNight.phase != dayNight.phase;
+}
+
+/// Manzaranın ön planındaki canlılık: bozkırda çalışan uzak at kafaları ve
+/// süzülen kuşlar.
+class _LifePainter extends CustomPainter {
+  _LifePainter({required this.dn, required this.time, required this.seed});
+  final DayNight dn;
+  final double time;
+  final int seed;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final rng = Random(seed + 21);
+    final c = Color.lerp(const Color(0xFF2A211A), const Color(0xFF0C0F18), dn.night)!;
+    for (var i = 0; i < 2; i++) {
+      final x = w * (0.12 + rng.nextDouble() * 0.76);
+      final y = h * 0.955;
+      final s = h / 420;
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.scale(s);
+      final p = Paint()..color = c;
+      canvas.drawPath(
+        Path()
+          ..moveTo(-10, 0)
+          ..lineTo(0, -34)
+          ..lineTo(10, 0)
+          ..close(),
+        p,
+      );
+      canvas.save();
+      canvas.translate(0, -34);
+      canvas.rotate(0.2 * sin(time * 2.2 + i * 2.1));
+      canvas.drawRect(const Rect.fromLTWH(-38, -3, 70, 6), p);
+      canvas.drawPath(
+        Path()
+          ..moveTo(-38, -5)
+          ..quadraticBezierTo(-52, 4, -38, 16)
+          ..lineTo(-34, 0)
+          ..close(),
+        p,
+      );
+      canvas.restore();
+      canvas.restore();
+      if (dn.lightsOn) {
+        canvas.drawCircle(Offset(x, y - 34 * s - 2), 1.3, Paint()..color = Palette.lamp);
+      }
+    }
+    if (dn.night < 0.5) {
+      final bird = Paint()
+        ..color = Colors.black.withValues(alpha: 0.5 * (1 - dn.night * 2))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1
+        ..strokeCap = StrokeCap.round;
+      for (var i = 0; i < 4; i++) {
+        final fx = ((time * 0.022 + i * 0.06 + seed * 0.17) % 1.3) - 0.15;
+        final p = Offset(fx * w + i * 10, h * (0.22 + 0.05 * sin(i * 1.9)) + sin(time * 0.7 + i) * 3);
+        final flap = sin(time * 6.5 + i * 1.4) * 2.4;
+        canvas.drawPath(
+          Path()
+            ..moveTo(p.dx - 5, p.dy - flap)
+            ..quadraticBezierTo(p.dx - 2, p.dy - 1, p.dx, p.dy)
+            ..quadraticBezierTo(p.dx + 2, p.dy - 1, p.dx + 5, p.dy - flap),
+          bird,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LifePainter old) => old.time != time;
+}
+
+/// Kurak bozkır toprağı (shader). Statiktir; yalnızca gece tonu değişince
+/// yeniden çizilir.
+class SoilView extends ConsumerStatefulWidget {
+  const SoilView({super.key, this.base = const Color(0xFF9C6E45), this.seed = 0, this.scale = 1});
+  final Color base;
+  final int seed;
+  final double scale;
+
+  @override
+  ConsumerState<SoilView> createState() => _SoilViewState();
+}
+
+class _SoilViewState extends ConsumerState<SoilView> {
+  final _slot = ShaderSlot();
+
+  @override
+  void dispose() {
+    _slot.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Gece tonunu 20 kademeye yuvarla: her saniye yeniden çizilmesin.
+    final night = ref.watch(dayNightProvider.select((d) => (d.night * 20).round() / 20));
+    final program = ref.watch(shaderBankProvider).soil;
+    return RepaintBoundary(
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _SoilPainter(
+          shader: _slot.of(program),
+          night: night,
+          base: widget.base,
+          seed: widget.seed.toDouble(),
+          scale: widget.scale,
+        ),
+      ),
+    );
+  }
+}
+
+class _SoilPainter extends CustomPainter {
+  _SoilPainter({
+    required this.shader,
+    required this.night,
+    required this.base,
+    required this.seed,
+    required this.scale,
+  });
+  final ui.FragmentShader? shader;
+  final double night;
+  final Color base;
+  final double seed;
+  final double scale;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final sh = shader;
+    if (sh == null) {
+      final c = PaintKit.nightTint(base, night);
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..shader = ui.Gradient.linear(rect.topCenter, rect.bottomCenter, [c, Color.lerp(c, Colors.black, 0.35)!]),
+      );
+      return;
+    }
+    sh
+      ..setFloat(0, size.width)
+      ..setFloat(1, size.height)
+      ..setFloat(2, night)
+      ..setFloat(3, seed)
+      ..setFloat(4, scale)
+      ..setFloat(5, base.r)
+      ..setFloat(6, base.g)
+      ..setFloat(7, base.b);
+    canvas.drawRect(rect, Paint()..shader = sh);
+  }
+
+  @override
+  bool shouldRepaint(_SoilPainter old) => old.night != night || old.base != base || old.shader != shader;
 }
 
 class _HillsPainter extends CustomPainter {

@@ -12,6 +12,7 @@ import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
+import '../../core/visuals/landscape.dart';
 import '../../core/visuals/painters/ground_painter.dart';
 import '../../core/widgets/effect_layer.dart';
 import '../well/drilling_screen.dart';
@@ -41,10 +42,17 @@ class ParcelTile extends ConsumerWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // Gerçekçi toprak (shader) + sürülmüş parsel izleri ve kenar gölgesi.
+            SoilView(
+              seed: index * 7 + 3,
+              base: parcel.status == ParcelStatus.dry ? const Color(0xFFA89580) : const Color(0xFF8C5A34),
+              scale: 0.8,
+            ),
             CustomPaint(
-              painter: GroundPainter(
+              painter: PlotOverlayPainter(
                 seed: index * 31 + siteId.hashCode,
                 cracked: parcel.status == ParcelStatus.dry,
+                tilled: parcel.status == ParcelStatus.empty,
                 night: night,
                 highlight: parcel.surveyed && parcel.status == ParcelStatus.empty ? parcel.tier?.color : null,
               ),

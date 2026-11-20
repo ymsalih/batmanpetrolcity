@@ -39,7 +39,12 @@ Ayrıca:
 | **Yer altı kesiti** | Dalgalı ve kubbeli (petrol kapanı) katman sınırları, tanecik dokusu, derinlikle artan karanlık, muhafaza borusu, halka boşlukta yukarı akan kırıntılar, üç konili dönen matkap. Petrol bulununca kuyuda petrol yükselir, ekran sarsılır, ardından fışkırma başlar. |
 | **Fışkırma** | Fiziksel parçacık sistemi (`core/visuals/particles.dart`): yerçekimi, hava direnci, rüzgâr, hıza göre uzayan damlalar, yere çarpınca sıçrama, hacimle büyüyen ve yanardöner petrol gölü, sis. |
 | **Shader'lar** (`shaders/*.frag`, GLSL kodu) | `sky.frag`: fbm gürültülü hareketli bulutlar, güneş ışıması, gece yıldızları. `heat_haze.frag`: Batman sıcağı sırasında ekranı kaplayan ısı dalgası. `oil_sheen.frag`: rezervuarda ince film yanardönerliği. Shader yüklenemezse gradyan yedeğine düşülür. |
-| **Ortam** | Atmosferik perspektifli katmanlı tepeler (paralaks), uzakta sallanan at kafası silüetleri, süzülen kuşlar, araziyi gezen bulut gölgeleri. |
+| **Manzara** (`landscape.frag`) | Tek shader'da tam sahne: dört katman aşınmış dağ sırtı ve belirgin Raman Dağı kütlesi, güneş yönüne göre yamaç ışığı, erozyon olukları, kireçtaşı yüzleri, vadi sisi, atmosferik perspektif, bulut gölgeleri, çalılık, akşam ışık hüzmeleri ve sırt ışığı, gece köy ışıkları, ön planda bozkır, ince film greni. Üstünde uzak at kafaları ve kuşlar. |
+| **Toprak** (`soil.frag`) | Kurak bozkır toprağı: renk lekeleri, kuraklık çatlakları (voronoi), çakıllar, kum taneciği, kuru ot. Saha zemini, parseller (sürülmüş tarla izleriyle) ve harita arazisi. Statik, önbelleklenir. |
+| **Jeoloji** (`geology.frag`) | Yer altı kesitinde kayaç başına doku: köklü toprak, dalgalı tabakalı kil, bloklu ve damarlı kaya, tabakalı ve fosilli kireçtaşı, gözenekli kumtaşı rezervuar; katman temas gölgeleri. |
+| **Ortam** | Paralaks, süzülen kuşlar, araziyi gezen bulut gölgeleri. |
+
+Shader'lar `ShaderSlot` ile widget başına kalıcı tutulur. Her çizimde yeni örnek oluşturmak, önbelleğe alınmış resimlerde uniform'ların bozulmasına yol açıyordu.
 
 ## Çalıştırma
 

@@ -13,7 +13,6 @@ import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
-import '../../core/visuals/shaders.dart';
 import '../mascot/usta_controller.dart';
 import 'map_painter.dart';
 
@@ -53,7 +52,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
               left: 0,
               right: 0,
               height: box.maxHeight * MapPainter.horizon + 2,
-              child: const SkyView(),
+              child: const LandscapeBackdrop(seed: 1),
+            ),
+            Positioned(
+              top: box.maxHeight * MapPainter.horizon,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: const SoilView(seed: 2, base: Color(0xFFB88B5C), scale: 1.4),
             ),
             Positioned.fill(
               child: RepaintBoundary(

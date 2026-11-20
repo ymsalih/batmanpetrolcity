@@ -127,19 +127,16 @@ class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProvi
               left: 0,
               right: 0,
               bottom: 0,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [dn.shade(Palette.earthLight), dn.shade(const Color(0xFF4E3019))],
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SoilView(seed: widget.seed, base: const Color(0xFFA0714A)),
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      painter: CloudShadowPainter(time: seconds, night: dn.night),
+                    ),
                   ),
-                ),
-                child: RepaintBoundary(
-                  child: CustomPaint(
-                    painter: CloudShadowPainter(time: seconds, night: dn.night),
-                  ),
-                ),
+                ],
               ),
             ),
             Positioned(

@@ -10,11 +10,14 @@ import 'day_night.dart';
 /// Uygulama açılışında yüklenen fragment shader programları.
 /// Yüklenemezse (ör. test ortamı) null kalır ve gradyan yedeğine düşülür.
 class ShaderBank {
-  const ShaderBank({this.sky, this.heatHaze, this.oilSheen});
+  const ShaderBank({this.sky, this.heatHaze, this.oilSheen, this.landscape, this.soil, this.geology});
 
   final ui.FragmentProgram? sky;
   final ui.FragmentProgram? heatHaze;
   final ui.FragmentProgram? oilSheen;
+  final ui.FragmentProgram? landscape;
+  final ui.FragmentProgram? soil;
+  final ui.FragmentProgram? geology;
 
   static Future<ShaderBank> load() async {
     Future<ui.FragmentProgram?> tryLoad(String path) async {
@@ -30,12 +33,49 @@ class ShaderBank {
       tryLoad('shaders/sky.frag'),
       tryLoad('shaders/heat_haze.frag'),
       tryLoad('shaders/oil_sheen.frag'),
+      tryLoad('shaders/landscape.frag'),
+      tryLoad('shaders/soil.frag'),
+      tryLoad('shaders/geology.frag'),
     ]);
-    return ShaderBank(sky: results[0], heatHaze: results[1], oilSheen: results[2]);
+    return ShaderBank(
+      sky: results[0],
+      heatHaze: results[1],
+      oilSheen: results[2],
+      landscape: results[3],
+      soil: results[4],
+      geology: results[5],
+    );
   }
 }
 
 final shaderBankProvider = Provider<ShaderBank>((ref) => const ShaderBank());
+
+/// Bir widget'ın kalıcı shader örneği.
+///
+/// Her çizimde yeni FragmentShader oluşturmak, önbelleğe alınmış (statik)
+/// resimlerde shader çöpe gidince uniform'ların bozulmasına yol açar.
+/// Bu yüzden her widget kendi örneğini saklar ve yalnızca uniform'ları
+/// günceller.
+class ShaderSlot {
+  ui.FragmentProgram? _program;
+  ui.FragmentShader? _shader;
+
+  ui.FragmentShader? of(ui.FragmentProgram? program) {
+    if (program == null) return null;
+    if (!identical(program, _program)) {
+      _shader?.dispose();
+      _program = program;
+      _shader = program.fragmentShader();
+    }
+    return _shader;
+  }
+
+  void dispose() {
+    _shader?.dispose();
+    _shader = null;
+    _program = null;
+  }
+}
 
 /// Sürekli artan saniye değeri veren yardımcı mixin.
 mixin TimeTicker<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
@@ -64,6 +104,14 @@ class SkyView extends ConsumerStatefulWidget {
 }
 
 class _SkyViewState extends ConsumerState<SkyView> with SingleTickerProviderStateMixin, TimeTicker {
+  final _slot = ShaderSlot();
+
+  @override
+  void dispose() {
+    _slot.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dn = ref.watch(dayNightProvider);
@@ -71,24 +119,24 @@ class _SkyViewState extends ConsumerState<SkyView> with SingleTickerProviderStat
     return RepaintBoundary(
       child: CustomPaint(
         size: Size.infinite,
-        painter: SkyPainter(program: program, dayNight: dn, time: seconds),
+        painter: SkyPainter(shader: _slot.of(program), dayNight: dn, time: seconds),
       ),
     );
   }
 }
 
 class SkyPainter extends CustomPainter {
-  SkyPainter({required this.program, required this.dayNight, required this.time});
+  SkyPainter({required this.shader, required this.dayNight, required this.time});
 
-  final ui.FragmentProgram? program;
+  final ui.FragmentShader? shader;
   final DayNight dayNight;
   final double time;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final p = program;
-    if (p == null) {
+    final sh = shader;
+    if (sh == null) {
       canvas.drawRect(
         rect,
         Paint()..shader = ui.Gradient.linear(rect.topCenter, rect.bottomCenter, [dayNight.skyTop, dayNight.skyBottom]),
@@ -96,7 +144,7 @@ class SkyPainter extends CustomPainter {
       return;
     }
     final sun = dayNight.sunPosition;
-    final sh = p.fragmentShader()
+    sh
       ..setFloat(0, size.width)
       ..setFloat(1, size.height)
       ..setFloat(2, time)
@@ -127,32 +175,40 @@ class HeatHazeOverlay extends ConsumerStatefulWidget {
 }
 
 class _HeatHazeOverlayState extends ConsumerState<HeatHazeOverlay> with SingleTickerProviderStateMixin, TimeTicker {
+  final _slot = ShaderSlot();
+
+  @override
+  void dispose() {
+    _slot.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final program = ref.watch(shaderBankProvider).heatHaze;
     return IgnorePointer(
-      child: CustomPaint(size: Size.infinite, painter: _HeatPainter(program, seconds, widget.strength)),
+      child: CustomPaint(size: Size.infinite, painter: _HeatPainter(_slot.of(program), seconds, widget.strength)),
     );
   }
 }
 
 class _HeatPainter extends CustomPainter {
-  _HeatPainter(this.program, this.time, this.strength);
-  final ui.FragmentProgram? program;
+  _HeatPainter(this.shader, this.time, this.strength);
+  final ui.FragmentShader? shader;
   final double time;
   final double strength;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final p = program;
-    if (p == null) {
+    final sh = shader;
+    if (sh == null) {
       // Yedek: titreşen sıcak ton
       final a = 0.08 + 0.03 * sin(time * 2);
       canvas.drawRect(rect, Paint()..color = const Color(0xFFFF9E40).withValues(alpha: a * strength));
       return;
     }
-    final sh = p.fragmentShader()
+    sh
       ..setFloat(0, size.width)
       ..setFloat(1, size.height)
       ..setFloat(2, time)
@@ -165,14 +221,15 @@ class _HeatPainter extends CustomPainter {
 }
 
 /// Petrol yüzeyi shader'ını verilen yol içine çizer (yoksa düz koyu renk).
-void paintOilSurface(Canvas canvas, Path clip, Rect bounds, ui.FragmentProgram? program, double time) {
+void paintOilSurface(Canvas canvas, Path clip, Rect bounds, ui.FragmentShader? shader, double time) {
   canvas.save();
   canvas.clipPath(clip);
-  if (program == null) {
+  final sh = shader;
+  if (sh == null) {
     canvas.drawRect(bounds, Paint()..color = const Color(0xFF14110F));
   } else {
     canvas.translate(bounds.left, bounds.top);
-    final sh = program.fragmentShader()
+    sh
       ..setFloat(0, bounds.width)
       ..setFloat(1, bounds.height)
       ..setFloat(2, time);

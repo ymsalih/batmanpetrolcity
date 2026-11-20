@@ -25,7 +25,8 @@ class CrossSectionPainter extends CustomPainter {
     this.lightsOn = false,
     this.night = 0,
     this.oilRise = 0,
-    this.oilProgram,
+    this.oilShader,
+    this.geoShader,
   });
 
   final double progress;
@@ -40,7 +41,10 @@ class CrossSectionPainter extends CustomPainter {
 
   /// 0..1: petrolün kuyu deliğinde yükselişi.
   final double oilRise;
-  final ui.FragmentProgram? oilProgram;
+  final ui.FragmentShader? oilShader;
+
+  /// Gerçekçi kayaç dokuları (geology.frag). Yalnızca 5 katmanlı jeolojide.
+  final ui.FragmentShader? geoShader;
 
   static const surfaceFraction = 0.22;
 
@@ -100,9 +104,59 @@ class CrossSectionPainter extends CustomPainter {
       return path;
     }
 
+    final geo = layers.length == 5 ? geoShader : null;
+    if (geo != null) {
+      var acc = 0.0;
+      final cum = <double>[];
+      for (var k = 0; k < 4; k++) {
+        acc += layers[k].thickness / total;
+        cum.add(acc);
+      }
+      geo
+        ..setFloat(0, w)
+        ..setFloat(1, h)
+        ..setFloat(2, surfaceFraction)
+        ..setFloat(3, night)
+        ..setFloat(4, cum[0])
+        ..setFloat(5, cum[1])
+        ..setFloat(6, cum[2])
+        ..setFloat(7, cum[3]);
+      for (var k = 0; k < 5; k++) {
+        geo
+          ..setFloat(8 + k * 3, layers[k].color.r)
+          ..setFloat(9 + k * 3, layers[k].color.g)
+          ..setFloat(10 + k * 3, layers[k].color.b);
+      }
+      for (var k = 0; k < 5; k++) {
+        geo.setFloat(23 + k, layers[k].pattern.index.toDouble());
+      }
+      canvas.drawRect(Rect.fromLTWH(0, surfaceY - 2, w, h - surfaceY + 2), Paint()..shader = geo);
+    }
+
     for (var i = 0; i < layers.length; i++) {
       final path = layerPath(i);
       final bounds = path.getBounds();
+      if (geo != null) {
+        // Shader tüm dokuları çizdi; yalnızca rezervuarın durumu üstüne gelir.
+        if (layers[i].pattern == GeoPattern.reservoir && outcome != null) {
+          canvas.save();
+          canvas.clipPath(path);
+          _paintReservoir(canvas, bounds, Random(i * 97 + 13), path);
+          canvas.restore();
+        } else if (layers[i].pattern == GeoPattern.reservoir) {
+          _label(
+            canvas,
+            '?',
+            Offset(bounds.center.dx - 140, bounds.center.dy - 8),
+            Colors.white38,
+            26,
+            width: 40,
+            align: TextAlign.center,
+          );
+        }
+        _label(canvas, layers[i].name, Offset(8, boundary(i, 10) + 6), Colors.white.withValues(alpha: 0.85), 11);
+        continue;
+      }
       canvas.save();
       canvas.clipPath(path);
       _paintLayer(canvas, bounds, layers[i], i, path);
@@ -123,16 +177,18 @@ class CrossSectionPainter extends CustomPainter {
       _label(canvas, layers[i].name, Offset(8, label + 6), Colors.white.withValues(alpha: 0.8), 11);
     }
 
-    // Derinlikle artan karanlık (ışık yüzeyden gelir)
+    // Derinlikle artan karanlık (ışık yüzeyden gelir; shader'da zaten var)
     final under = Rect.fromLTWH(0, surfaceY, w, ugH);
-    canvas.drawRect(
-      under,
-      Paint()
-        ..shader = ui.Gradient.linear(under.topCenter, under.bottomCenter, [
-          Colors.transparent,
-          Colors.black.withValues(alpha: 0.45 + night * 0.15),
-        ]),
-    );
+    if (geo == null) {
+      canvas.drawRect(
+        under,
+        Paint()
+          ..shader = ui.Gradient.linear(under.topCenter, under.bottomCenter, [
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.45 + night * 0.15),
+          ]),
+      );
+    }
 
     // Derinlik cetveli
     final targetY = surfaceY + ugH * _targetFraction(layers);
@@ -429,7 +485,7 @@ class CrossSectionPainter extends CustomPainter {
     switch (outcome) {
       case true:
         // Gözenekli kumtaşı içinde petrol: shader ile yanardöner yüzey
-        paintOilSurface(canvas, clip, rect, oilProgram, time);
+        paintOilSurface(canvas, clip, rect, oilShader, time);
         final pore = Paint()..color = const Color(0xFF6E6259).withValues(alpha: 0.55);
         for (var i = 0; i < 70; i++) {
           canvas.drawCircle(
@@ -465,7 +521,7 @@ class CrossSectionPainter extends CustomPainter {
         _label(
           canvas,
           'KURU',
-          Offset(rect.center.dx - 30, rect.center.dy - 2),
+          Offset(rect.center.dx - 130, rect.center.dy - 2),
           Colors.white70,
           14,
           width: 60,
