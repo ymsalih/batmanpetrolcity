@@ -47,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 SwitchListTile(
                   title: const Text('Ses efektleri'),
-                  subtitle: const Text('Ses paketi yakında'),
+                  subtitle: const Text('Kodla üretilen efektler ve ortam sesi'),
                   secondary: const Icon(Icons.volume_up),
                   value: s.soundEnabled,
                   onChanged: ctrl.setSound,

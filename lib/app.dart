@@ -5,6 +5,7 @@ import 'config/game_config.dart';
 import 'config/palette.dart';
 import 'core/game/game_controller.dart';
 import 'core/navigation.dart';
+import 'core/services/services.dart';
 import 'core/ui/premium.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
@@ -95,13 +96,25 @@ class _GameShellState extends ConsumerState<GameShell> {
     super.initState();
     // Arka plana geçince kaydet, geri gelince geçen süreyi hesapla.
     _lifecycle = AppLifecycleListener(
-      onHide: _save,
-      onPause: _save,
+      onHide: _toBackground,
+      onPause: _toBackground,
       onInactive: _save,
       onDetach: _save,
-      onResume: () => ref.read(gameControllerProvider.notifier).resume(),
+      onResume: () {
+        ref.read(gameControllerProvider.notifier).resume();
+        _syncAmbient();
+      },
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAmbient());
   }
+
+  void _toBackground() {
+    _save();
+    ref.read(audioServiceProvider).setAmbient(false);
+  }
+
+  /// Ortam sesi yalnızca ses açıksa ve uygulama öndeyken çalar.
+  void _syncAmbient() => ref.read(audioServiceProvider).setAmbient(ref.read(gameControllerProvider).soundEnabled);
 
   void _save() => ref.read(gameControllerProvider.notifier).save();
 
@@ -114,6 +127,9 @@ class _GameShellState extends ConsumerState<GameShell> {
   @override
   Widget build(BuildContext context) {
     final tab = ref.watch(navProvider);
+    ref.listen(gameControllerProvider.select((s) => s.soundEnabled), (_, on) {
+      ref.read(audioServiceProvider).setAmbient(on);
+    });
     final hasOfflineReport = ref.watch(gameControllerProvider.select((s) => s.offlineReport != null));
     final tutorialDone = ref.watch(gameControllerProvider.select((s) => s.tutorialDone));
 

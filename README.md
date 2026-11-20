@@ -84,7 +84,14 @@ Usta'nın yanında sahada bir ekip çalışır. Her işçinin bir **görevi** ve
 
 ## Ses
 
-`core/services/synth.dart` tüm ses efektlerini (ve rüzgâr + motor uğultulu ortam döngüsünü) dosya kullanmadan matematiksel olarak WAV'a dönüştürür. Çalmak için bir ses paketi (ör. `audioplayers`) eklenip `AudioService` uygulanır; tetikleme noktaları hazırdır.
+Ses dosyası yoktur. `core/services/synth.dart` tüm efektleri (dokunma, matkap, motor, fışkırma, kuru kuyu,
+toplama, kasa zili, yükseltme, fanfar, uyarı, tamir) ve rüzgâr + motor uğultulu ortam döngüsünü matematiksel
+olarak WAV'a dönüştürür; `SynthAudioService` bunları `audioplayers` ile bellekten çalar.
+
+- Her efekt için 4 oynatıcılık havuz: hızlı ardışık dokunuşlar birbirini kesmez.
+- Ortam sesi uygulama arka plana geçince susar, öne gelince devam eder; Ayarlar'dan kapatılabilir.
+- Tarayıcılar sesi ilk dokunuştan sonra açar; ortam sesi ilk efektle birlikte başlar.
+- Testlerde `SilentAudioService` kullanılır.
 
 ## Claude Code izinleri
 

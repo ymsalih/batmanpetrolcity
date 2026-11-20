@@ -26,16 +26,25 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 enum SoundCue { tap, drillStart, drillTap, gusher, dryWell, collect, sell, upgrade, unlock, event, repair }
 
-/// Ses efektleri için arayüz. Ses dosyaları eklenince bir AudioPlayer
-/// uygulaması yazılıp [audioServiceProvider] override edilir.
+/// Ses efektleri için arayüz. Gerçek uygulama: SynthAudioService (kodla
+/// üretilen sesler). Testlerde ve sessiz modda [SilentAudioService].
 abstract interface class AudioService {
   void play(SoundCue cue);
+
+  /// Arka plandaki ortam sesi (rüzgâr + motor uğultusu).
+  void setAmbient(bool on);
+
+  void dispose();
 }
 
 class SilentAudioService implements AudioService {
   const SilentAudioService();
   @override
   void play(SoundCue cue) {}
+  @override
+  void setAmbient(bool on) {}
+  @override
+  void dispose() {}
 }
 
 final audioServiceProvider = Provider<AudioService>((ref) => const SilentAudioService());

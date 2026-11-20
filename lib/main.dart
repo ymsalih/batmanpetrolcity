@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'core/game/game_controller.dart';
 import 'core/persistence/save_repository.dart';
+import 'core/services/services.dart';
+import 'core/services/synth_audio_service.dart';
 import 'core/visuals/shaders.dart';
 
 Future<void> main() async {
@@ -32,6 +34,7 @@ Future<void> main() async {
       overrides: [
         saveRepositoryProvider.overrideWithValue(SharedPrefsSaveRepository(prefs)),
         shaderBankProvider.overrideWithValue(shaders),
+        audioServiceProvider.overrideWithValue(SynthAudioService()),
       ],
       child: const PetrolAgasiApp(),
     ),
