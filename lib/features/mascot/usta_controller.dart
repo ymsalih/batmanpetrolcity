@@ -65,9 +65,11 @@ class UstaController extends Notifier<UstaMessage?> {
           GameEventKind.priceSpike => UstaLines.priceSpike,
           GameEventKind.breakdown => UstaLines.breakdown,
         };
-        say(_pick(lines),
-            mood: config.kind == GameEventKind.priceSpike ? UstaMood.excited : UstaMood.worried,
-            duration: const Duration(seconds: 5));
+        say(
+          _pick(lines),
+          mood: config.kind == GameEventKind.priceSpike ? UstaMood.excited : UstaMood.worried,
+          duration: const Duration(seconds: 5),
+        );
       case StorageFull():
         final now = DateTime.now().millisecondsSinceEpoch;
         if (now - _lastStorageWarnMs > 60000) {

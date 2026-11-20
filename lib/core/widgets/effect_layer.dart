@@ -36,42 +36,49 @@ class EffectLayerState extends State<EffectLayer> {
   /// Verilen ekran konumundan yukarı süzülen yazı.
   void floatText(Offset global, String text, {Color color = const Color(0xFFFFD36E)}) {
     final p = _toLocal(global);
-    _add((key, done) => Positioned(
-          key: key,
-          left: p.dx - 80,
-          top: p.dy - 20,
-          width: 160,
-          child: IgnorePointer(
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                shadows: const [Shadow(blurRadius: 4, color: Colors.black)],
-              ),
-            )
-                .animate(onComplete: (_) => done())
-                .moveY(begin: 0, end: -70, duration: 900.ms, curve: Curves.easeOut)
-                .scale(begin: const Offset(0.7, 0.7), end: const Offset(1.1, 1.1), duration: 250.ms)
-                .then()
-                .fadeOut(duration: 450.ms),
-          ),
-        ));
+    _add(
+      (key, done) => Positioned(
+        key: key,
+        left: p.dx - 80,
+        top: p.dy - 20,
+        width: 160,
+        child: IgnorePointer(
+          child:
+              Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      shadows: const [Shadow(blurRadius: 4, color: Colors.black)],
+                    ),
+                  )
+                  .animate(onComplete: (_) => done())
+                  .moveY(begin: 0, end: -70, duration: 900.ms, curve: Curves.easeOut)
+                  .scale(begin: const Offset(0.7, 0.7), end: const Offset(1.1, 1.1), duration: 250.ms)
+                  .then()
+                  .fadeOut(duration: 450.ms),
+        ),
+      ),
+    );
   }
 
   /// Basit parçacık patlaması.
   void burst(Offset global, {Color color = const Color(0xFF14110F), int count = 14, double spread = 70}) {
     final p = _toLocal(global);
-    _add((key, done) => Positioned(
-          key: key,
-          left: p.dx - spread,
-          top: p.dy - spread,
-          width: spread * 2,
-          height: spread * 2,
-          child: IgnorePointer(child: ParticleBurst(color: color, count: count, onDone: done)),
-        ));
+    _add(
+      (key, done) => Positioned(
+        key: key,
+        left: p.dx - spread,
+        top: p.dy - spread,
+        width: spread * 2,
+        height: spread * 2,
+        child: IgnorePointer(
+          child: ParticleBurst(color: color, count: count, onDone: done),
+        ),
+      ),
+    );
   }
 
   @override

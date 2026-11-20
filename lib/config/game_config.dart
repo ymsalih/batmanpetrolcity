@@ -136,11 +136,7 @@ abstract final class GameConfig {
     YieldTier.medium: 1.0,
     YieldTier.high: 1.6,
   };
-  static const Map<YieldTier, double> tierWeights = {
-    YieldTier.low: 0.4,
-    YieldTier.medium: 0.4,
-    YieldTier.high: 0.2,
-  };
+  static const Map<YieldTier, double> tierWeights = {YieldTier.low: 0.4, YieldTier.medium: 0.4, YieldTier.high: 0.2};
 
   /// Verimsiz parselde kuru kuyu daha olası.
   static const Map<YieldTier, double> tierDryModifier = {
@@ -316,9 +312,7 @@ abstract final class GameConfig {
     ),
   ];
 
-  static SiteConfig site(String id) =>
-      sites.firstWhere((s) => s.id == id, orElse: () => sites.first);
+  static SiteConfig site(String id) => sites.firstWhere((s) => s.id == id, orElse: () => sites.first);
 
-  static EventConfig event(GameEventKind kind) =>
-      events.firstWhere((e) => e.kind == kind);
+  static EventConfig event(GameEventKind kind) => events.firstWhere((e) => e.kind == kind);
 }

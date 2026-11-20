@@ -19,11 +19,7 @@ class PetrolAgasiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: Palette.sunset,
-      brightness: Brightness.dark,
-      surface: Palette.panel,
-    );
+    final scheme = ColorScheme.fromSeed(seedColor: Palette.sunset, brightness: Brightness.dark, surface: Palette.panel);
     return MaterialApp(
       title: 'Batman Petrol Ağası',
       debugShowCheckedModeBanner: false,
@@ -32,6 +28,15 @@ class PetrolAgasiApp extends StatelessWidget {
         scaffoldBackgroundColor: Palette.oil,
         useMaterial3: true,
         snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+      ),
+      // Efekt katmanı ve Usta balonu Navigator'ın üstünde: tüm ekranlarda görünür.
+      builder: (context, child) => EffectLayer(
+        child: Stack(
+          children: [
+            child!,
+            const Positioned(left: 8, right: 8, bottom: 88, child: UstaBubble()),
+          ],
+        ),
       ),
       home: const GameShell(),
     );
@@ -75,38 +80,47 @@ class _GameShellState extends ConsumerState<GameShell> {
     final hasOfflineReport = ref.watch(gameControllerProvider.select((s) => s.offlineReport != null));
     final tutorialDone = ref.watch(gameControllerProvider.select((s) => s.tutorialDone));
 
-    return EffectLayer(
-      child: Scaffold(
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                const GameHud(),
-                Expanded(
-                  child: IndexedStack(
-                    index: tab.index,
-                    children: const [MapScreen(), SiteScreen(), MarketScreen(), SettingsScreen()],
-                  ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              const GameHud(),
+              Expanded(
+                child: IndexedStack(
+                  index: tab.index,
+                  children: const [MapScreen(), SiteScreen(), MarketScreen(), SettingsScreen()],
                 ),
-              ],
-            ),
-            const Positioned(left: 8, right: 8, bottom: 8, child: UstaBubble()),
-            if (!tutorialDone) const Positioned.fill(child: TutorialOverlay()),
-            if (hasOfflineReport && tutorialDone) const Positioned.fill(child: OfflineReportOverlay()),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: tab.index,
-          backgroundColor: Palette.panel,
-          indicatorColor: Palette.sunset.withValues(alpha: 0.35),
-          onDestinationSelected: (i) => ref.read(navProvider.notifier).go(AppTab.values[i]),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Harita'),
-            NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view), label: 'Saha'),
-            NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Pazar'),
-            NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Ayarlar'),
-          ],
-        ),
+              ),
+            ],
+          ),
+          if (!tutorialDone) const Positioned.fill(child: TutorialOverlay()),
+          if (hasOfflineReport && tutorialDone) const Positioned.fill(child: OfflineReportOverlay()),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: tab.index,
+        backgroundColor: Palette.panel,
+        indicatorColor: Palette.sunset.withValues(alpha: 0.35),
+        onDestinationSelected: (i) => ref.read(navProvider.notifier).go(AppTab.values[i]),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Harita'),
+          NavigationDestination(
+            icon: Icon(Icons.grid_view_outlined),
+            selectedIcon: Icon(Icons.grid_view),
+            label: 'Saha',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront),
+            label: 'Pazar',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Ayarlar',
+          ),
+        ],
       ),
     );
   }

@@ -54,14 +54,22 @@ class UstaPainter extends CustomPainter {
       ..strokeWidth = r * 0.09
       ..strokeCap = StrokeCap.round;
     final worried = mood == 2 ? 1.0 : 0.0;
-    canvas.drawLine(Offset(c.dx - r * 0.55, eyeY - r * (0.25 - worried * 0.08)),
-        Offset(c.dx - r * 0.2, eyeY - r * (0.30 + worried * 0.06)), brow);
-    canvas.drawLine(Offset(c.dx + r * 0.2, eyeY - r * (0.30 + worried * 0.06)),
-        Offset(c.dx + r * 0.55, eyeY - r * (0.25 - worried * 0.08)), brow);
+    canvas.drawLine(
+      Offset(c.dx - r * 0.55, eyeY - r * (0.25 - worried * 0.08)),
+      Offset(c.dx - r * 0.2, eyeY - r * (0.30 + worried * 0.06)),
+      brow,
+    );
+    canvas.drawLine(
+      Offset(c.dx + r * 0.2, eyeY - r * (0.30 + worried * 0.06)),
+      Offset(c.dx + r * 0.55, eyeY - r * (0.25 - worried * 0.08)),
+      brow,
+    );
 
     // Burun
-    canvas.drawOval(Rect.fromCenter(center: Offset(c.dx, c.dy + r * 0.12), width: r * 0.26, height: r * 0.22),
-        Paint()..color = const Color(0xFFC98656));
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(c.dx, c.dy + r * 0.12), width: r * 0.26, height: r * 0.22),
+      Paint()..color = const Color(0xFFC98656),
+    );
 
     // Ağız
     final mouth = Paint()
@@ -72,14 +80,26 @@ class UstaPainter extends CustomPainter {
     final my = c.dy + r * 0.52;
     switch (mood) {
       case 1:
-        canvas.drawOval(Rect.fromCenter(center: Offset(c.dx, my), width: r * 0.36, height: r * 0.30),
-            Paint()..color = const Color(0xFF5A2A1A));
+        canvas.drawOval(
+          Rect.fromCenter(center: Offset(c.dx, my), width: r * 0.36, height: r * 0.30),
+          Paint()..color = const Color(0xFF5A2A1A),
+        );
       case 2:
-        canvas.drawArc(Rect.fromCenter(center: Offset(c.dx, my + r * 0.12), width: r * 0.5, height: r * 0.25), pi,
-            pi, false, mouth);
+        canvas.drawArc(
+          Rect.fromCenter(center: Offset(c.dx, my + r * 0.12), width: r * 0.5, height: r * 0.25),
+          pi,
+          pi,
+          false,
+          mouth,
+        );
       default:
         canvas.drawArc(
-            Rect.fromCenter(center: Offset(c.dx, my - r * 0.08), width: r * 0.55, height: r * 0.3), 0.2, pi - 0.4, false, mouth);
+          Rect.fromCenter(center: Offset(c.dx, my - r * 0.08), width: r * 0.55, height: r * 0.3),
+          0.2,
+          pi - 0.4,
+          false,
+          mouth,
+        );
     }
 
     // Bıyık
@@ -101,12 +121,16 @@ class UstaPainter extends CustomPainter {
     // Siperlik
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.55), width: r * 2.5, height: r * 0.22), Radius.circular(r * 0.1)),
+        Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.55), width: r * 2.5, height: r * 0.22),
+        Radius.circular(r * 0.1),
+      ),
       Paint()..color = const Color(0xFFE0A92C),
     );
     // Baret sırtı ve damla logosu
-    canvas.drawRect(Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.95), width: r * 0.22, height: r * 0.7),
-        Paint()..color = const Color(0xFFE0A92C));
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.95), width: r * 0.22, height: r * 0.7),
+      Paint()..color = const Color(0xFFE0A92C),
+    );
     final drop = Path()
       ..moveTo(c.dx + r * 0.55, c.dy - r * 1.05)
       ..quadraticBezierTo(c.dx + r * 0.75, c.dy - r * 0.8, c.dx + r * 0.55, c.dy - r * 0.72)

@@ -35,34 +35,17 @@ abstract final class UstaLines {
     'Kırk beş derece! Pompalar ağırdan alıyor, sabret.',
   ];
 
-  static const priceSpike = [
-    'Fiyat uçtu bıra! Depoda ne varsa sat şimdi!',
-    'Borsada bayram var, hemen Pazara koş!',
-  ];
+  static const priceSpike = ['Fiyat uçtu bıra! Depoda ne varsa sat şimdi!', 'Borsada bayram var, hemen Pazara koş!'];
 
-  static const breakdown = [
-    'Eyvah, bir kuyu durdu! Git dokun, tamir edelim.',
-    'Arıza var lo! Anahtarı kap gel.',
-  ];
+  static const breakdown = ['Eyvah, bir kuyu durdu! Git dokun, tamir edelim.', 'Arıza var lo! Anahtarı kap gel.'];
 
-  static const storageFull = [
-    'Depo ağzına kadar doldu, topla hele!',
-  ];
+  static const storageFull = ['Depo ağzına kadar doldu, topla hele!'];
 
-  static const unlock = [
-    'Yeni saha hayırlı olsun ağam!',
-    'Bak sen, iş büyüyor! Hayırlı uğurlu olsun.',
-  ];
+  static const unlock = ['Yeni saha hayırlı olsun ağam!', 'Bak sen, iş büyüyor! Hayırlı uğurlu olsun.'];
 
-  static const sold = [
-    'Para cebe girdi, Allah bereket versin!',
-    'İyi sattın bıra, ticaret senin işin.',
-  ];
+  static const sold = ['Para cebe girdi, Allah bereket versin!', 'İyi sattın bıra, ticaret senin işin.'];
 
-  static const noMoney = [
-    'Cep boş bıra, biraz petrol sat önce.',
-    'Para yetmiyor lo. Pazara uğra hele.',
-  ];
+  static const noMoney = ['Cep boş bıra, biraz petrol sat önce.', 'Para yetmiyor lo. Pazara uğra hele.'];
 
   static const offline = 'Sen yokken kuyular boş durmadı!';
 }

@@ -80,20 +80,20 @@ class Parcel {
   }
 
   Map<String, dynamic> toJson() => {
-        's': status.name,
-        if (tier != null) 't': tier!.name,
-        'sv': surveyed,
-        'ws': willStrike,
-        'ds': drillStartMs,
-        'dd': drillDurationMs,
-        'db': drillBonusMs,
-        'pl': pumpLevel,
-        'sl': storageLevel,
-        'st': stored,
-        'br': broken,
-        'rp': repairProgress,
-        'tp': totalProduced,
-      };
+    's': status.name,
+    if (tier != null) 't': tier!.name,
+    'sv': surveyed,
+    'ws': willStrike,
+    'ds': drillStartMs,
+    'dd': drillDurationMs,
+    'db': drillBonusMs,
+    'pl': pumpLevel,
+    'sl': storageLevel,
+    'st': stored,
+    'br': broken,
+    'rp': repairProgress,
+    'tp': totalProduced,
+  };
 
   factory Parcel.fromJson(Map<String, dynamic> j) {
     return Parcel(

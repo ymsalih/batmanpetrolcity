@@ -4,40 +4,38 @@ import 'parcel.dart';
 import 'site_state.dart';
 
 class GameStats {
-  const GameStats({
-    this.totalBarrels = 0,
-    this.totalEarned = 0,
-    this.wellsDrilled = 0,
-    this.dryWells = 0,
-  });
+  const GameStats({this.totalBarrels = 0, this.totalEarned = 0, this.wellsDrilled = 0, this.dryWells = 0});
 
   final double totalBarrels;
   final double totalEarned;
   final int wellsDrilled;
   final int dryWells;
 
-  GameStats copyWith({double? totalBarrels, double? totalEarned, int? wellsDrilled, int? dryWells}) =>
-      GameStats(
-        totalBarrels: totalBarrels ?? this.totalBarrels,
-        totalEarned: totalEarned ?? this.totalEarned,
-        wellsDrilled: wellsDrilled ?? this.wellsDrilled,
-        dryWells: dryWells ?? this.dryWells,
-      );
+  GameStats copyWith({double? totalBarrels, double? totalEarned, int? wellsDrilled, int? dryWells}) => GameStats(
+    totalBarrels: totalBarrels ?? this.totalBarrels,
+    totalEarned: totalEarned ?? this.totalEarned,
+    wellsDrilled: wellsDrilled ?? this.wellsDrilled,
+    dryWells: dryWells ?? this.dryWells,
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'tb': totalBarrels, 'te': totalEarned, 'wd': wellsDrilled, 'dw': dryWells};
+  Map<String, dynamic> toJson() => {'tb': totalBarrels, 'te': totalEarned, 'wd': wellsDrilled, 'dw': dryWells};
 
   factory GameStats.fromJson(Map<String, dynamic> j) => GameStats(
-        totalBarrels: (j['tb'] as num?)?.toDouble() ?? 0,
-        totalEarned: (j['te'] as num?)?.toDouble() ?? 0,
-        wellsDrilled: (j['wd'] as num?)?.toInt() ?? 0,
-        dryWells: (j['dw'] as num?)?.toInt() ?? 0,
-      );
+    totalBarrels: (j['tb'] as num?)?.toDouble() ?? 0,
+    totalEarned: (j['te'] as num?)?.toDouble() ?? 0,
+    wellsDrilled: (j['wd'] as num?)?.toInt() ?? 0,
+    dryWells: (j['dw'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// Uygulama açılışında hesaplanan çevrimdışı kazanç özeti (kaydedilmez).
 class OfflineReport {
-  const OfflineReport({required this.away, required this.barrels, required this.drillsFinished, required this.storageFull});
+  const OfflineReport({
+    required this.away,
+    required this.barrels,
+    required this.drillsFinished,
+    required this.storageFull,
+  });
 
   final Duration away;
   final double barrels;
@@ -67,18 +65,18 @@ class GameState {
   });
 
   factory GameState.initial(int nowMs) => GameState(
-        money: GameConfig.startMoney,
-        crude: 0,
-        refined: 0,
-        sites: {for (final s in GameConfig.sites) s.id: SiteState.initial(s)},
-        selectedSiteId: GameConfig.startSiteId,
-        oilPrice: GameConfig.priceStart,
-        priceHistory: const [GameConfig.priceStart],
-        nextPriceChangeMs: nowMs + GameConfig.priceChangeSeconds * 1000,
-        effects: const [],
-        nextEventMs: nowMs + GameConfig.eventMaxGapSeconds * 1000,
-        lastTickMs: nowMs,
-      );
+    money: GameConfig.startMoney,
+    crude: 0,
+    refined: 0,
+    sites: {for (final s in GameConfig.sites) s.id: SiteState.initial(s)},
+    selectedSiteId: GameConfig.startSiteId,
+    oilPrice: GameConfig.priceStart,
+    priceHistory: const [GameConfig.priceStart],
+    nextPriceChangeMs: nowMs + GameConfig.priceChangeSeconds * 1000,
+    effects: const [],
+    nextEventMs: nowMs + GameConfig.eventMaxGapSeconds * 1000,
+    lastTickMs: nowMs,
+  );
 
   final double money;
 
@@ -109,8 +107,7 @@ class GameState {
   SiteState site(String id) => sites[id] ?? SiteState.initial(GameConfig.site(id));
   SiteState get selectedSite => site(selectedSiteId);
 
-  bool get refineryUnlocked =>
-      GameConfig.sites.any((s) => s.unlocksRefinery && (sites[s.id]?.unlocked ?? false));
+  bool get refineryUnlocked => GameConfig.sites.any((s) => s.unlocksRefinery && (sites[s.id]?.unlocked ?? false));
 
   double productionMultiplierAt(int nowMs) =>
       effects.where((e) => e.isActiveAt(nowMs)).fold(1.0, (m, e) => m * e.productionMultiplier);
@@ -171,24 +168,24 @@ class GameState {
   }
 
   Map<String, dynamic> toJson() => {
-        'v': GameConfig.saveVersion,
-        'm': money,
-        'c': crude,
-        'r': refined,
-        'sites': {for (final e in sites.entries) e.key: e.value.toJson()},
-        'sel': selectedSiteId,
-        'op': oilPrice,
-        'ph': priceHistory,
-        'npc': nextPriceChangeMs,
-        'fx': effects.map((e) => e.toJson()).toList(),
-        'ne': nextEventMs,
-        'lt': lastTickMs,
-        'ts': tutorialStep,
-        'td': tutorialDone,
-        'hp': hapticsEnabled,
-        'snd': soundEnabled,
-        'stats': stats.toJson(),
-      };
+    'v': GameConfig.saveVersion,
+    'm': money,
+    'c': crude,
+    'r': refined,
+    'sites': {for (final e in sites.entries) e.key: e.value.toJson()},
+    'sel': selectedSiteId,
+    'op': oilPrice,
+    'ph': priceHistory,
+    'npc': nextPriceChangeMs,
+    'fx': effects.map((e) => e.toJson()).toList(),
+    'ne': nextEventMs,
+    'lt': lastTickMs,
+    'ts': tutorialStep,
+    'td': tutorialDone,
+    'hp': hapticsEnabled,
+    'snd': soundEnabled,
+    'stats': stats.toJson(),
+  };
 
   /// Eski kayıtlar ve config'e sonradan eklenen sahalar için toleranslı okuma.
   factory GameState.fromJson(Map<String, dynamic> j, int nowMs) {

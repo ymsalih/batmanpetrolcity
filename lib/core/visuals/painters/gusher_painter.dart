@@ -37,8 +37,10 @@ class GusherPainter extends CustomPainter {
       canvas.drawCircle(pos, radius, paint);
     }
     // Kuyu ağzındaki kabarcık
-    canvas.drawOval(Rect.fromCenter(center: o, width: size.width * 0.18, height: size.height * 0.05),
-        Paint()..color = Palette.oil);
+    canvas.drawOval(
+      Rect.fromCenter(center: o, width: size.width * 0.18, height: size.height * 0.05),
+      Paint()..color = Palette.oil,
+    );
   }
 
   @override

@@ -15,9 +15,9 @@ class UstaBubble extends ConsumerWidget {
     final msg = ref.watch(ustaProvider);
     if (msg == null) return const SizedBox.shrink();
     return GestureDetector(
-      onTap: () => ref.read(ustaProvider.notifier).dismiss(),
-      child: UstaSpeech(text: msg.text, mood: msg.mood),
-    )
+          onTap: () => ref.read(ustaProvider.notifier).dismiss(),
+          child: UstaSpeech(text: msg.text, mood: msg.mood),
+        )
         .animate(key: ValueKey(msg.id))
         .slideY(begin: 0.6, end: 0, duration: 260.ms, curve: Curves.easeOutBack)
         .fadeIn(duration: 200.ms);
@@ -38,7 +38,11 @@ class UstaSpeech extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          SizedBox(width: avatarSize, height: avatarSize, child: UstaAvatar(mood: mood)),
+          SizedBox(
+            width: avatarSize,
+            height: avatarSize,
+            child: UstaAvatar(mood: mood),
+          ),
           const SizedBox(width: 6),
           Flexible(
             child: Container(
@@ -58,7 +62,10 @@ class UstaSpeech extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Usta', style: TextStyle(color: Palette.sunset, fontWeight: FontWeight.w900, fontSize: 12)),
+                  const Text(
+                    'Usta',
+                    style: TextStyle(color: Palette.sunset, fontWeight: FontWeight.w900, fontSize: 12),
+                  ),
                   const SizedBox(height: 2),
                   Text(text, style: const TextStyle(color: Palette.oil, fontSize: 15, height: 1.25)),
                   if (footer != null) ...[const SizedBox(height: 8), footer!],

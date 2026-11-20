@@ -61,7 +61,10 @@ class _Stat extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+        ),
       ],
     );
   }

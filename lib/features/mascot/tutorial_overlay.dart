@@ -17,21 +17,31 @@ class TutorialStep {
 
 /// İlk açılıştaki 5 adımlık rehber.
 const tutorialSteps = [
-  TutorialStep(AppTab.map,
-      'Hoş geldin bıra! Ben Usta. 1940\'ta Raman\'dan ilk petrol fışkırdığından beri bu topraklardayım. Seni Batman\'ın petrol ağası yapacağız!',
-      UstaMood.excited),
-  TutorialStep(AppTab.map,
-      'Burası harita. Raman sahası açık. Batı Raman, Garzan ve Rafineri Bölgesi\'ni TL biriktirip açarsın.',
-      UstaMood.happy),
-  TutorialStep(AppTab.site,
-      'Her sahada 9 parsel var. Önce etüt yaptır, verimi kestir. Sonra sondaja başla; ekrana dokundukça matkap hızlanır!',
-      UstaMood.thinking),
-  TutorialStep(AppTab.site,
-      'Petrol çıkarsa at kafası kurulur ve varil üretir. Depo dolunca kuyuya dokun, topla. Kuru çıkarsa da üzülme, olur öyle.',
-      UstaMood.happy),
-  TutorialStep(AppTab.market,
-      'Varilleri Pazarda satarsın. Fiyat birkaç dakikada bir oynar, iyi anı kolla lo! Hadi bakalım, kolay gelsin!',
-      UstaMood.excited),
+  TutorialStep(
+    AppTab.map,
+    'Hoş geldin bıra! Ben Usta. 1940\'ta Raman\'dan ilk petrol fışkırdığından beri bu topraklardayım. Seni Batman\'ın petrol ağası yapacağız!',
+    UstaMood.excited,
+  ),
+  TutorialStep(
+    AppTab.map,
+    'Burası harita. Raman sahası açık. Batı Raman, Garzan ve Rafineri Bölgesi\'ni TL biriktirip açarsın.',
+    UstaMood.happy,
+  ),
+  TutorialStep(
+    AppTab.site,
+    'Her sahada 9 parsel var. Önce etüt yaptır, verimi kestir. Sonra sondaja başla; ekrana dokundukça matkap hızlanır!',
+    UstaMood.thinking,
+  ),
+  TutorialStep(
+    AppTab.site,
+    'Petrol çıkarsa at kafası kurulur ve varil üretir. Depo dolunca kuyuya dokun, topla. Kuru çıkarsa da üzülme, olur öyle.',
+    UstaMood.happy,
+  ),
+  TutorialStep(
+    AppTab.market,
+    'Varilleri Pazarda satarsın. Fiyat birkaç dakikada bir oynar, iyi anı kolla lo! Hadi bakalım, kolay gelsin!',
+    UstaMood.excited,
+  ),
 ];
 
 class TutorialOverlay extends ConsumerStatefulWidget {
@@ -71,7 +81,9 @@ class _TutorialOverlayState extends ConsumerState<TutorialOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final stepIndex = ref.watch(gameControllerProvider.select((s) => s.tutorialStep)).clamp(0, tutorialSteps.length - 1);
+    final stepIndex = ref
+        .watch(gameControllerProvider.select((s) => s.tutorialStep))
+        .clamp(0, tutorialSteps.length - 1);
     final step = tutorialSteps[stepIndex];
     final last = stepIndex == tutorialSteps.length - 1;
 
@@ -86,10 +98,16 @@ class _TutorialOverlayState extends ConsumerState<TutorialOverlay> {
         avatarSize: 84,
         footer: Row(
           children: [
-            Text('${stepIndex + 1} / ${tutorialSteps.length}',
-                style: const TextStyle(color: Palette.earth, fontWeight: FontWeight.w700)),
+            Text(
+              '${stepIndex + 1} / ${tutorialSteps.length}',
+              style: const TextStyle(color: Palette.earth, fontWeight: FontWeight.w700),
+            ),
             const Spacer(),
-            if (!last) TextButton(onPressed: _skip, child: const Text('Geç', style: TextStyle(color: Palette.earth))),
+            if (!last)
+              TextButton(
+                onPressed: _skip,
+                child: const Text('Geç', style: TextStyle(color: Palette.earth)),
+              ),
             FilledButton(
               key: const Key('tutorial_next'),
               style: FilledButton.styleFrom(backgroundColor: Palette.sunset),

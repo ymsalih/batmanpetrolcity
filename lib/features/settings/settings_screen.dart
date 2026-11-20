@@ -24,82 +24,90 @@ class SettingsScreen extends ConsumerWidget {
       children: [
         _section('Ayarlar'),
         Card(
-          child: Column(children: [
-            SwitchListTile(
-              title: const Text('Titreşim'),
-              secondary: const Icon(Icons.vibration),
-              value: s.hapticsEnabled,
-              onChanged: ctrl.setHaptics,
-            ),
-            SwitchListTile(
-              title: const Text('Ses efektleri'),
-              subtitle: const Text('Ses paketi yakında'),
-              secondary: const Icon(Icons.volume_up),
-              value: s.soundEnabled,
-              onChanged: ctrl.setSound,
-            ),
-            ListTile(
-              leading: const Icon(Icons.school),
-              title: const Text('Usta\'nın rehberini tekrar izle'),
-              onTap: ctrl.restartTutorial,
-            ),
-            ListTile(
-              leading: const Icon(Icons.save),
-              title: const Text('Şimdi kaydet'),
-              subtitle: Text('Oyun her ${GameConfig.autoSaveSeconds} sn\'de ve uygulama arka plana geçince otomatik kaydedilir.'),
-              onTap: () async {
-                await ctrl.save();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kaydedildi')));
-                }
-              },
-            ),
-          ]),
+          child: Column(
+            children: [
+              SwitchListTile(
+                title: const Text('Titreşim'),
+                secondary: const Icon(Icons.vibration),
+                value: s.hapticsEnabled,
+                onChanged: ctrl.setHaptics,
+              ),
+              SwitchListTile(
+                title: const Text('Ses efektleri'),
+                subtitle: const Text('Ses paketi yakında'),
+                secondary: const Icon(Icons.volume_up),
+                value: s.soundEnabled,
+                onChanged: ctrl.setSound,
+              ),
+              ListTile(
+                leading: const Icon(Icons.school),
+                title: const Text('Usta\'nın rehberini tekrar izle'),
+                onTap: ctrl.restartTutorial,
+              ),
+              ListTile(
+                leading: const Icon(Icons.save),
+                title: const Text('Şimdi kaydet'),
+                subtitle: Text(
+                  'Oyun her ${GameConfig.autoSaveSeconds} sn\'de ve uygulama arka plana geçince otomatik kaydedilir.',
+                ),
+                onTap: () async {
+                  await ctrl.save();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kaydedildi')));
+                  }
+                },
+              ),
+            ],
+          ),
         ),
         _section('İstatistikler'),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(children: [
-              _stat('Toplam üretim', Fmt.barrels(s.stats.totalBarrels)),
-              _stat('Toplam kazanç', Fmt.money(s.stats.totalEarned)),
-              _stat('Açılan kuyu', Fmt.integer(s.stats.wellsDrilled)),
-              _stat('Kuru kuyu', Fmt.integer(s.stats.dryWells)),
-            ]),
+            child: Column(
+              children: [
+                _stat('Toplam üretim', Fmt.barrels(s.stats.totalBarrels)),
+                _stat('Toplam kazanç', Fmt.money(s.stats.totalEarned)),
+                _stat('Açılan kuyu', Fmt.integer(s.stats.wellsDrilled)),
+                _stat('Kuru kuyu', Fmt.integer(s.stats.dryWells)),
+              ],
+            ),
           ),
         ),
         _section('Yakında'),
         Card(
-          child: Column(children: [
-            ListTile(
-              enabled: ads.isAvailable,
-              leading: const Icon(Icons.smart_display),
-              title: const Text('Reklam izle: 2 saat üretim x2'),
-              subtitle: const Text('Yakında'),
-              onTap: () async {
-                if (await ads.showRewardedAd()) {
-                  ctrl.grantBoost(
-                    title: 'Reklam bonusu',
-                    source: EffectSource.ad,
-                    duration: AdRewardConfig.boostDuration,
-                    productionMultiplier: AdRewardConfig.productionMultiplier,
-                  );
-                }
-              },
-            ),
-            ListTile(
-              enabled: leaderboard.isAvailable,
-              leading: const Icon(Icons.leaderboard),
-              title: const Text('Liderlik tablosu'),
-              subtitle: const Text('Yakında'),
-            ),
-            ListTile(
-              enabled: gps.isAvailable,
-              leading: const Icon(Icons.location_on),
-              title: const Text('Raman\'a git, bonus kazan (GPS)'),
-              subtitle: const Text('Yakında'),
-            ),
-          ]),
+          child: Column(
+            children: [
+              ListTile(
+                enabled: ads.isAvailable,
+                leading: const Icon(Icons.smart_display),
+                title: const Text('Reklam izle: 2 saat üretim x2'),
+                subtitle: const Text('Yakında'),
+                onTap: () async {
+                  if (await ads.showRewardedAd()) {
+                    ctrl.grantBoost(
+                      title: 'Reklam bonusu',
+                      source: EffectSource.ad,
+                      duration: AdRewardConfig.boostDuration,
+                      productionMultiplier: AdRewardConfig.productionMultiplier,
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                enabled: leaderboard.isAvailable,
+                leading: const Icon(Icons.leaderboard),
+                title: const Text('Liderlik tablosu'),
+                subtitle: const Text('Yakında'),
+              ),
+              ListTile(
+                enabled: gps.isAvailable,
+                leading: const Icon(Icons.location_on),
+                title: const Text('Raman\'a git, bonus kazan (GPS)'),
+                subtitle: const Text('Yakında'),
+              ),
+            ],
+          ),
         ),
         _section('Tehlikeli bölge'),
         Card(
@@ -140,16 +148,21 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _section(String title) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-        child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Palette.sunsetLight)),
-      );
+    padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+    child: Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Palette.sunsetLight),
+    ),
+  );
 
   Widget _stat(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          Text(label, style: const TextStyle(color: Colors.white70)),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white70)),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+      ],
+    ),
+  );
 }

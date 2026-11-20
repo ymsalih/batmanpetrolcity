@@ -68,8 +68,7 @@ class DisabledLocationBonusService implements LocationBonusService {
   Future<bool> isPlayerAt(SiteConfig site, {double radiusKm = 3}) async => false;
 }
 
-final locationBonusServiceProvider =
-    Provider<LocationBonusService>((ref) => const DisabledLocationBonusService());
+final locationBonusServiceProvider = Provider<LocationBonusService>((ref) => const DisabledLocationBonusService());
 
 // --------------------------------------------------------- Liderlik tablosu
 

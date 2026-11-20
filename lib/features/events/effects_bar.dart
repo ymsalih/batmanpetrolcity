@@ -16,7 +16,8 @@ class EffectsBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final effects = ref.watch(gameControllerProvider.select((s) => s.effects));
     final brokenCount = ref.watch(
-        gameControllerProvider.select((s) => s.allParcels.where((e) => e.parcel.broken).length));
+      gameControllerProvider.select((s) => s.allParcels.where((e) => e.parcel.broken).length),
+    );
     // Geri sayım için saniyede bir yeniden çizilir.
     ref.watch(gameControllerProvider.select((s) => s.lastTickMs ~/ 1000));
     final now = ref.read(clockProvider).nowMs();
@@ -31,8 +32,7 @@ class EffectsBar extends ConsumerWidget {
           scrollDirection: Axis.horizontal,
           children: [
             for (final e in active) _chip(_icon(e), _color(e), '${e.title} · ${Fmt.clock(e.remaining(now))}'),
-            if (brokenCount > 0)
-              _chip(Icons.build, Palette.danger, 'Arıza: $brokenCount kuyu durdu'),
+            if (brokenCount > 0) _chip(Icons.build, Palette.danger, 'Arıza: $brokenCount kuyu durdu'),
           ],
         ),
       ),
@@ -40,25 +40,30 @@ class EffectsBar extends ConsumerWidget {
   }
 
   IconData _icon(ActiveEffect e) => switch (e.eventKind) {
-        GameEventKind.heatWave => Icons.wb_sunny,
-        GameEventKind.priceSpike => Icons.trending_up,
-        _ => Icons.bolt,
-      };
+    GameEventKind.heatWave => Icons.wb_sunny,
+    GameEventKind.priceSpike => Icons.trending_up,
+    _ => Icons.bolt,
+  };
 
   Color _color(ActiveEffect e) => e.productionMultiplier < 1 ? Palette.sunset : Palette.success;
 
   Widget _chip(IconData icon, Color color, String text) => Container(
-        margin: const EdgeInsets.only(right: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color),
+    margin: const EdgeInsets.only(right: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(color: color),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
         ),
-        child: Row(children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-        ]),
-      );
+      ],
+    ),
+  );
 }

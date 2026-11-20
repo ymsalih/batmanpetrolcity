@@ -45,8 +45,8 @@ class DayNight {
   String get label => night > 0.6
       ? 'Gece'
       : dusk > 0.5
-          ? (phase < 0.5 ? 'Şafak' : 'Akşam')
-          : 'Gündüz';
+      ? (phase < 0.5 ? 'Şafak' : 'Akşam')
+      : 'Gündüz';
 }
 
 /// Saniyede bir güncellenen gün-gece durumu.

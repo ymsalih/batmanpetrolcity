@@ -39,8 +39,7 @@ abstract final class Economy {
       (site.drillCost * GameConfig.pumpCostFactor * pow(GameConfig.pumpCostGrowth, currentLevel)).roundToDouble();
 
   static double storageUpgradeCost(SiteConfig site, int currentLevel) =>
-      (site.drillCost * GameConfig.storageCostFactor * pow(GameConfig.storageCostGrowth, currentLevel))
-          .roundToDouble();
+      (site.drillCost * GameConfig.storageCostFactor * pow(GameConfig.storageCostGrowth, currentLevel)).roundToDouble();
 
   static double clearDryCost(SiteConfig site) => (site.drillCost * GameConfig.clearDryCostFactor).roundToDouble();
 
@@ -89,6 +88,5 @@ abstract final class Economy {
   static double refineCost(double barrels) => barrels * GameConfig.refineCostPerBarrel;
 
   /// Çevrimdışı hesaplanacak süre (sn), [GameConfig.offlineMaxSeconds] ile sınırlı.
-  static int offlineSeconds(int lastMs, int nowMs) =>
-      ((nowMs - lastMs) ~/ 1000).clamp(0, GameConfig.offlineMaxSeconds);
+  static int offlineSeconds(int lastMs, int nowMs) => ((nowMs - lastMs) ~/ 1000).clamp(0, GameConfig.offlineMaxSeconds);
 }

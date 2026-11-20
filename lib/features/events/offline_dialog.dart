@@ -36,7 +36,11 @@ class OfflineReportOverlay extends ConsumerWidget {
           children: [
             const SizedBox(width: 90, height: 90, child: UstaAvatar(mood: UstaMood.excited)),
             const SizedBox(height: 8),
-            const Text(UstaLines.offline, textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)),
+            const Text(
+              UstaLines.offline,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
+            ),
             const SizedBox(height: 12),
             Text(
               'Sen yokken ${Fmt.integer(report.barrels.floor())} varil çıktı',
@@ -51,27 +55,32 @@ class OfflineReportOverlay extends ConsumerWidget {
             if (report.storageFull)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
-                child: Text('Bazı depolar doldu! Kapasiteyi yükseltirsen daha çok birikir.',
-                    textAlign: TextAlign.center, style: TextStyle(color: Palette.sunsetLight)),
+                child: Text(
+                  'Bazı depolar doldu! Kapasiteyi yükseltirsen daha çok birikir.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Palette.sunsetLight),
+                ),
               ),
             const SizedBox(height: 16),
-            Builder(builder: (ctx) {
-              return FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: Palette.sunset, minimumSize: const Size(200, 48)),
-                icon: const Icon(Icons.oil_barrel),
-                label: const Text('Hepsini topla'),
-                onPressed: () {
-                  final box = ctx.findRenderObject() as RenderBox?;
-                  final ctrl = ref.read(gameControllerProvider.notifier);
-                  final amount = ctrl.collectAll();
-                  ctrl.dismissOfflineReport();
-                  if (box != null && amount > 0) {
-                    final center = box.localToGlobal(box.size.center(Offset.zero));
-                    EffectLayer.maybeOf(context)?.floatText(center, '+${Fmt.integer(amount)} varil');
-                  }
-                },
-              );
-            }),
+            Builder(
+              builder: (ctx) {
+                return FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: Palette.sunset, minimumSize: const Size(200, 48)),
+                  icon: const Icon(Icons.oil_barrel),
+                  label: const Text('Hepsini topla'),
+                  onPressed: () {
+                    final box = ctx.findRenderObject() as RenderBox?;
+                    final ctrl = ref.read(gameControllerProvider.notifier);
+                    final amount = ctrl.collectAll();
+                    ctrl.dismissOfflineReport();
+                    if (box != null && amount > 0) {
+                      final center = box.localToGlobal(box.size.center(Offset.zero));
+                      EffectLayer.maybeOf(context)?.floatText(center, '+${Fmt.integer(amount)} varil');
+                    }
+                  },
+                );
+              },
+            ),
             TextButton(
               onPressed: () => ref.read(gameControllerProvider.notifier).dismissOfflineReport(),
               child: const Text('Sonra'),

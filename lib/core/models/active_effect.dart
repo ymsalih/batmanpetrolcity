@@ -31,24 +31,24 @@ class ActiveEffect {
   Duration remaining(int nowMs) => Duration(milliseconds: (endMs - nowMs).clamp(0, 1 << 31));
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'ti': title,
-        'so': source.name,
-        if (eventKind != null) 'ek': eventKind!.name,
-        'sm': startMs,
-        'em': endMs,
-        'pm': productionMultiplier,
-        'prm': priceMultiplier,
-      };
+    'id': id,
+    'ti': title,
+    'so': source.name,
+    if (eventKind != null) 'ek': eventKind!.name,
+    'sm': startMs,
+    'em': endMs,
+    'pm': productionMultiplier,
+    'prm': priceMultiplier,
+  };
 
   factory ActiveEffect.fromJson(Map<String, dynamic> j) => ActiveEffect(
-        id: j['id'] as String? ?? '',
-        title: j['ti'] as String? ?? '',
-        source: EffectSource.values.firstWhere((e) => e.name == j['so'], orElse: () => EffectSource.other),
-        eventKind: GameEventKind.values.where((e) => e.name == j['ek']).firstOrNull,
-        startMs: (j['sm'] as num?)?.toInt() ?? 0,
-        endMs: (j['em'] as num?)?.toInt() ?? 0,
-        productionMultiplier: (j['pm'] as num?)?.toDouble() ?? 1,
-        priceMultiplier: (j['prm'] as num?)?.toDouble() ?? 1,
-      );
+    id: j['id'] as String? ?? '',
+    title: j['ti'] as String? ?? '',
+    source: EffectSource.values.firstWhere((e) => e.name == j['so'], orElse: () => EffectSource.other),
+    eventKind: GameEventKind.values.where((e) => e.name == j['ek']).firstOrNull,
+    startMs: (j['sm'] as num?)?.toInt() ?? 0,
+    endMs: (j['em'] as num?)?.toInt() ?? 0,
+    productionMultiplier: (j['pm'] as num?)?.toDouble() ?? 1,
+    priceMultiplier: (j['prm'] as num?)?.toDouble() ?? 1,
+  );
 }

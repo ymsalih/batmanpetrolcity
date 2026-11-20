@@ -47,21 +47,30 @@ class DerrickPainter extends CustomPainter {
     }
 
     // Taç bloğu
-    canvas.drawRect(Rect.fromCenter(center: Offset(rect.center.dx, topY), width: w * 0.24, height: h * 0.05),
-        Paint()..color = Palette.sunset);
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(rect.center.dx, topY), width: w * 0.24, height: h * 0.05),
+      Paint()..color = Palette.sunset,
+    );
 
     // Platform
-    canvas.drawRect(Rect.fromLTRB(rect.left + w * 0.05, baseY - h * 0.08, rect.right - w * 0.05, baseY - h * 0.04),
-        Paint()..color = Palette.earth);
+    canvas.drawRect(
+      Rect.fromLTRB(rect.left + w * 0.05, baseY - h * 0.08, rect.right - w * 0.05, baseY - h * 0.04),
+      Paint()..color = Palette.earth,
+    );
 
     // Halat + kelly (dönen matkap borusu)
     canvas.drawLine(Offset(rect.center.dx, topY), Offset(rect.center.dx, baseY - h * 0.25), brace);
-    final kellyRect = Rect.fromCenter(center: Offset(rect.center.dx, baseY - h * 0.17), width: w * 0.08, height: h * 0.18);
+    final kellyRect = Rect.fromCenter(
+      center: Offset(rect.center.dx, baseY - h * 0.17),
+      width: w * 0.08,
+      height: h * 0.18,
+    );
     canvas.drawRect(kellyRect, Paint()..color = Palette.steel);
     final stripe = (spin % 1) * kellyRect.height;
     canvas.drawRect(
-        Rect.fromLTWH(kellyRect.left, kellyRect.top + stripe * 0.8, kellyRect.width, kellyRect.height * 0.2),
-        Paint()..color = Palette.gold);
+      Rect.fromLTWH(kellyRect.left, kellyRect.top + stripe * 0.8, kellyRect.width, kellyRect.height * 0.2),
+      Paint()..color = Palette.gold,
+    );
 
     if (lightsOn) {
       final glow = Paint()

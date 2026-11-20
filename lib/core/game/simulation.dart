@@ -20,12 +20,7 @@ class SimulationResult {
 /// Oyunun zaman ilerletme mantığı. Saf fonksiyondur: hem canlı tick hem de
 /// çevrimdışı kazanç hesabı aynı kodu kullanır.
 abstract final class Simulation {
-  static SimulationResult advance(
-    GameState s,
-    int nowMs,
-    Random rng, {
-    bool allowRandomEvents = true,
-  }) {
+  static SimulationResult advance(GameState s, int nowMs, Random rng, {bool allowRandomEvents = true}) {
     final fromMs = s.lastTickMs;
     if (nowMs <= fromMs) return SimulationResult(s, const [], 0, 0, false);
 
@@ -55,7 +50,9 @@ abstract final class Simulation {
             p = p.copyWith(status: ParcelStatus.dry);
             stats = stats.copyWith(dryWells: stats.dryWells + 1);
           }
-          events.add(DrillFinished(siteId: cfg.id, index: i, struck: p.willStrike, lost: p.willStrike ? 0 : cfg.drillCost));
+          events.add(
+            DrillFinished(siteId: cfg.id, index: i, struck: p.willStrike, lost: p.willStrike ? 0 : cfg.drillCost),
+          );
         }
 
         if (p.status == ParcelStatus.producing && !p.broken) {
@@ -151,21 +148,26 @@ abstract final class Simulation {
       if (candidates.isEmpty) return (s, null);
       final pick = candidates[rng.nextInt(candidates.length)];
       final broken = pick.parcel.copyWith(broken: true, repairProgress: 0);
-      return (s.updateParcel(pick.siteId, pick.index, broken), RandomEventStarted(cfg, siteId: pick.siteId, index: pick.index));
+      return (
+        s.updateParcel(pick.siteId, pick.index, broken),
+        RandomEventStarted(cfg, siteId: pick.siteId, index: pick.index),
+      );
     }
 
     // Aynı türden etki zaten aktifse süresini yenile.
     final effects = s.effects.where((e) => e.eventKind != cfg.kind).toList()
-      ..add(ActiveEffect(
-        id: '${cfg.kind.name}_$nowMs',
-        title: cfg.title,
-        source: EffectSource.event,
-        eventKind: cfg.kind,
-        startMs: nowMs,
-        endMs: nowMs + cfg.durationSeconds * 1000,
-        productionMultiplier: cfg.productionMultiplier,
-        priceMultiplier: cfg.priceMultiplier,
-      ));
+      ..add(
+        ActiveEffect(
+          id: '${cfg.kind.name}_$nowMs',
+          title: cfg.title,
+          source: EffectSource.event,
+          eventKind: cfg.kind,
+          startMs: nowMs,
+          endMs: nowMs + cfg.durationSeconds * 1000,
+          productionMultiplier: cfg.productionMultiplier,
+          priceMultiplier: cfg.priceMultiplier,
+        ),
+      );
     return (s.copyWith(effects: effects), RandomEventStarted(cfg));
   }
 
@@ -199,8 +201,8 @@ abstract final class Simulation {
     if (awayMs <= 0) return (s.copyWith(lastTickMs: nowMs), null);
     final cappedFrom = nowMs - Economy.offlineSeconds(s.lastTickMs, nowMs) * 1000;
     final result = advance(s.copyWith(lastTickMs: cappedFrom), nowMs, rng, allowRandomEvents: false);
-    final report = awayMs >= GameConfig.offlineReportMinSeconds * 1000 &&
-            (result.produced > 0.5 || result.drillsFinished > 0)
+    final report =
+        awayMs >= GameConfig.offlineReportMinSeconds * 1000 && (result.produced > 0.5 || result.drillsFinished > 0)
         ? OfflineReport(
             away: Duration(milliseconds: awayMs),
             barrels: result.produced,

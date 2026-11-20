@@ -105,10 +105,7 @@ class GameController extends Notifier<GameState> {
     final site = state.site(siteId);
     if (site.unlocked) return ActionResult.invalid;
     if (!_spend(site.config.unlockCost)) return ActionResult.notEnoughMoney;
-    state = state.copyWith(
-      sites: {...state.sites, siteId: site.copyWith(unlocked: true)},
-      selectedSiteId: siteId,
-    );
+    state = state.copyWith(sites: {...state.sites, siteId: site.copyWith(unlocked: true)}, selectedSiteId: siteId);
     _emit(SiteUnlocked(siteId));
     return ActionResult.ok;
   }
@@ -253,10 +250,7 @@ class GameController extends Notifier<GameState> {
     final amount = min(barrels, state.crude).floorToDouble();
     if (amount <= 0) return ActionResult.invalid;
     if (!_spend(Economy.refineCost(amount))) return ActionResult.notEnoughMoney;
-    state = state.copyWith(
-      crude: state.crude - amount,
-      refined: state.refined + amount * GameConfig.refinedPerBarrel,
-    );
+    state = state.copyWith(crude: state.crude - amount, refined: state.refined + amount * GameConfig.refinedPerBarrel);
     return ActionResult.ok;
   }
 
@@ -271,18 +265,20 @@ class GameController extends Notifier<GameState> {
     double priceMultiplier = 1,
   }) {
     final t = now;
-    state = state.copyWith(effects: [
-      ...state.effects,
-      ActiveEffect(
-        id: '${source.name}_$t',
-        title: title,
-        source: source,
-        startMs: t,
-        endMs: t + duration.inMilliseconds,
-        productionMultiplier: productionMultiplier,
-        priceMultiplier: priceMultiplier,
-      ),
-    ]);
+    state = state.copyWith(
+      effects: [
+        ...state.effects,
+        ActiveEffect(
+          id: '${source.name}_$t',
+          title: title,
+          source: source,
+          startMs: t,
+          endMs: t + duration.inMilliseconds,
+          productionMultiplier: productionMultiplier,
+          priceMultiplier: priceMultiplier,
+        ),
+      ],
+    );
   }
 
   /// Hata ayıklama / test için olay tetikler.

@@ -11,9 +11,7 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
-      overrides: [
-        saveRepositoryProvider.overrideWithValue(SharedPrefsSaveRepository(prefs)),
-      ],
+      overrides: [saveRepositoryProvider.overrideWithValue(SharedPrefsSaveRepository(prefs))],
       child: const PetrolAgasiApp(),
     ),
   );

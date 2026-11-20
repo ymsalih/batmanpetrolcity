@@ -57,8 +57,9 @@ class PumpjackPainter extends CustomPainter {
     // Dişli kutusu
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          Rect.fromCenter(center: crankCenter + Offset(0, h * 0.10), width: w * 0.20, height: h * 0.16),
-          const Radius.circular(3)),
+        Rect.fromCenter(center: crankCenter + Offset(0, h * 0.10), width: w * 0.20, height: h * 0.16),
+        const Radius.circular(3),
+      ),
       steel,
     );
 
@@ -79,9 +80,13 @@ class PumpjackPainter extends CustomPainter {
     canvas.drawCircle(crankCenter, max(2, w * 0.02), dark);
 
     // Biyel kolu (pitman)
-    canvas.drawLine(pin, rear, Paint()
-      ..color = Palette.steelLight
-      ..strokeWidth = max(1.5, w * 0.018));
+    canvas.drawLine(
+      pin,
+      rear,
+      Paint()
+        ..color = Palette.steelLight
+        ..strokeWidth = max(1.5, w * 0.018),
+    );
 
     // Kiriş
     final beamPaint = Paint()
@@ -112,9 +117,13 @@ class PumpjackPainter extends CustomPainter {
     final wellX = front.dx - dir.dx * w * 0.06;
     final rodTop = Offset(wellX, headBottom.dy);
     final wellHead = Offset(wellX, groundY - h * 0.10);
-    canvas.drawLine(rodTop, wellHead, Paint()
-      ..color = Palette.steelLight
-      ..strokeWidth = max(1, w * 0.012));
+    canvas.drawLine(
+      rodTop,
+      wellHead,
+      Paint()
+        ..color = Palette.steelLight
+        ..strokeWidth = max(1, w * 0.012),
+    );
     canvas.drawRect(Rect.fromCenter(center: wellHead + Offset(0, h * 0.03), width: w * 0.08, height: h * 0.08), dark);
     canvas.drawRect(Rect.fromCenter(center: wellHead + Offset(0, h * 0.01), width: w * 0.14, height: h * 0.025), steel);
 
