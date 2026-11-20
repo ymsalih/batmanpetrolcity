@@ -13,7 +13,11 @@ import 'shaders.dart';
 /// Saha ekranının üst bandı: shader gökyüzü + atmosferik perspektifli
 /// katmanlı tepeler (paralaks) + süzülen kuşlar + uzaktaki kuleler.
 class LandscapeBackdrop extends ConsumerStatefulWidget {
-  const LandscapeBackdrop({super.key, this.parallax = 0, this.seed = 0});
+  const LandscapeBackdrop({super.key, this.parallax = 0, this.seed = 0, this.phase});
+
+  /// Sabit gün saati (0..1). Null ise oyunun gün-gece döngüsü kullanılır
+  /// (ör. açılış sinematiğinde şafak/gece sahneleri için verilir).
+  final double? phase;
 
   /// -1..1 yatay kaydırma (paralaks için).
   final double parallax;
@@ -58,7 +62,8 @@ class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with Sing
       return _FallbackLandscape(seed: widget.seed, parallax: widget.parallax);
     }
     // Yalnızca dilim değişince yeniden hesaplanır (saniyede bir build olsa da).
-    final slice = ref.watch(dayNightProvider.select((d) => (d.phase * _slices).floor()));
+    final live = ref.watch(dayNightProvider.select((d) => (d.phase * _slices).floor()));
+    final slice = widget.phase == null ? live : (widget.phase! * _slices).floor();
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
     return LayoutBuilder(
@@ -92,7 +97,7 @@ class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with Sing
                 painter: _CachedImagePainter(current: _cache.image, previous: _previous, fade: _fade),
               ),
             ),
-            _LifeLayer(seed: widget.seed),
+            _LifeLayer(seed: widget.seed, phase: widget.phase),
           ],
         );
       },
@@ -122,8 +127,9 @@ class _CachedImagePainter extends CustomPainter {
 
 /// Ucuz, canlı vektör katmanı: kuşlar ve uzak at kafaları.
 class _LifeLayer extends ConsumerStatefulWidget {
-  const _LifeLayer({required this.seed});
+  const _LifeLayer({required this.seed, this.phase});
   final int seed;
+  final double? phase;
 
   @override
   ConsumerState<_LifeLayer> createState() => _LifeLayerState();
@@ -132,7 +138,8 @@ class _LifeLayer extends ConsumerStatefulWidget {
 class _LifeLayerState extends ConsumerState<_LifeLayer> with SingleTickerProviderStateMixin, TimeTicker {
   @override
   Widget build(BuildContext context) {
-    final dn = ref.watch(dayNightProvider);
+    final live = ref.watch(dayNightProvider);
+    final dn = widget.phase == null ? live : DayNight(widget.phase!);
     return RepaintBoundary(
       child: CustomPaint(
         painter: _LifePainter(dn: dn, time: seconds, seed: widget.seed),

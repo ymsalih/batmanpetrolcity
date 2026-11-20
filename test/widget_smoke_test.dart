@@ -26,10 +26,9 @@ void main() {
         child: const PetrolAgasiApp(),
       ),
     );
-    // Açılış ekranını (yaklaşık 3,2 sn + geçiş) bekle.
-    for (var i = 0; i < 45; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
+    // İlk açılışta sinematik oynar: Geç ile atla.
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('intro_skip')));
     await settle(tester);
     expect(find.textContaining('Hoş geldin'), findsOneWidget);
 

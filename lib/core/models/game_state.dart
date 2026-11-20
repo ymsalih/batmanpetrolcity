@@ -75,6 +75,7 @@ class GameState {
     this.morale = GameConfig.moraleStart,
     this.pendingChoice,
     this.lastTeaMs = 0,
+    this.introSeen = false,
     this.offlineReport,
   });
 
@@ -139,6 +140,9 @@ class GameState {
   /// Oyuncunun cevabını bekleyen sahne.
   final PendingChoice? pendingChoice;
   final int lastTeaMs;
+
+  /// Açılış sinematiği izlendi mi.
+  final bool introSeen;
 
   /// Moralin üretime etkisi (ör. 70 → 1.02).
   double get moraleMultiplier =>
@@ -226,6 +230,7 @@ class GameState {
     PendingChoice? pendingChoice,
     bool clearPendingChoice = false,
     int? lastTeaMs,
+    bool? introSeen,
     OfflineReport? offlineReport,
     bool clearOfflineReport = false,
   }) {
@@ -257,6 +262,7 @@ class GameState {
       morale: morale ?? this.morale,
       pendingChoice: clearPendingChoice ? null : (pendingChoice ?? this.pendingChoice),
       lastTeaMs: lastTeaMs ?? this.lastTeaMs,
+      introSeen: introSeen ?? this.introSeen,
       offlineReport: clearOfflineReport ? null : (offlineReport ?? this.offlineReport),
     );
   }
@@ -290,6 +296,7 @@ class GameState {
     'mo': morale,
     if (pendingChoice != null) 'pc': pendingChoice!.toJson(),
     'tea': lastTeaMs,
+    'is': introSeen,
   };
 
   /// Eski kayıtlar ve config'e sonradan eklenen sahalar için toleranslı okuma.
@@ -338,6 +345,7 @@ class GameState {
       morale: ((j['mo'] as num?)?.toDouble() ?? GameConfig.moraleStart).clamp(0.0, 100.0),
       pendingChoice: j['pc'] is Map ? PendingChoice.fromJson(Map<String, dynamic>.from(j['pc'] as Map)) : null,
       lastTeaMs: (j['tea'] as num?)?.toInt() ?? 0,
+      introSeen: j['is'] as bool? ?? false,
     );
   }
 }

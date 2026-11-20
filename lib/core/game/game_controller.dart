@@ -438,6 +438,8 @@ class GameController extends Notifier<GameState> {
 
   void setLowGraphics(bool v) => state = state.copyWith(lowGraphics: v);
 
+  void setIntroSeen(bool v) => state = state.copyWith(introSeen: v);
+
   Future<void> resetGame() async {
     await _repo.clear();
     state = GameState.initial(now);

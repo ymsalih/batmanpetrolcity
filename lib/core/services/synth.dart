@@ -107,6 +107,23 @@ abstract final class Synth {
 
           return (note(0, 880) + note(0.09, 1318.5)) * 0.45;
         });
+      case SoundCue.whoosh:
+        // Sinematik geçiş: frekansı süpürülen filtreli gürültü.
+        var lp = 0.0;
+        return _render(1.1, (t) {
+          final cutoff = 0.02 + 0.25 * sin(pi * (t / 1.1));
+          lp += (noise() - lp) * cutoff;
+          final env = sin(pi * (t / 1.1));
+          return (lp * 1.4 * env * env).clamp(-0.95, 0.95);
+        });
+      case SoundCue.chime:
+        // Yıl belirirken: yumuşak, uzun kuyruklu çan + oktav.
+        return _render(2.2, (t) {
+          final env = exp(-t * 1.8) * min(1.0, t * 120);
+          return (sin(2 * pi * 523.25 * t) + 0.5 * sin(2 * pi * 784 * t) + 0.25 * sin(2 * pi * 1046.5 * t)) *
+              0.28 *
+              env;
+        });
       case SoundCue.repair:
         // Metal tıngırtısı: uyumsuz kısmi frekanslar.
         return _render(0.5, (t) {

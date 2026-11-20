@@ -111,6 +111,21 @@ class PumpjackPainter extends CustomPainter {
     // Ana kızak (skid)
     PaintKit.box(canvas, const Rect.fromLTWH(58, groundY - 7, 140, 5), darkSteel, night: n);
 
+    // Kiriş ve at başının yere düşen, sallanmayla birlikte hareket eden gölgesi.
+    {
+      final k = -sunX * 0.45;
+      Offset ground(Offset p) => Offset(p.dx + (groundY - p.dy) * k, groundY - 1.5 - (groundY - p.dy) * 0.035);
+      final fr = pivot - u * (frontLen - 4);
+      final re = pivot + u * (rearLen + 6);
+      final shadow = Paint()
+        ..color = Colors.black.withValues(alpha: 0.22 * (1 - n * 0.7))
+        ..strokeWidth = 3.2
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6);
+      canvas.drawLine(ground(fr), ground(re), shadow);
+      canvas.drawCircle(ground(fr + const Offset(-4, 8)), 4.5, shadow..style = PaintingStyle.fill);
+    }
+
     // ---------------------------------------------- Kuyu başı & akış hattı
     PaintKit.shadedBar(
       canvas,
@@ -139,7 +154,54 @@ class PumpjackPainter extends CustomPainter {
         ..strokeWidth = 1.2,
     );
 
+    // İkinci vana, manometre ve dirsekli akış hattı
+    canvas.drawCircle(
+      const Offset(10, groundY - 16),
+      2.6,
+      Paint()
+        ..color = PaintKit.nightTint(const Color(0xFFC0392B), n)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    PaintKit.sphere(canvas, const Offset(31, groundY - 26), 2.6, const Color(0xFFDADDE0), night: n);
+    canvas.drawLine(
+      const Offset(31, groundY - 26),
+      Offset(31 + cos(time * 0.7) * 1.6, groundY - 27.2),
+      Paint()
+        ..color = Colors.black
+        ..strokeWidth = 0.5,
+    );
+    PaintKit.shadedBar(
+      canvas,
+      const Offset(64, groundY - 8),
+      const Offset(64, groundY - 2),
+      3.2,
+      const Color(0xFF6F6A60),
+      night: n,
+    );
+    // Uyarı levhası
+    canvas.drawLine(
+      const Offset(46, groundY - 2),
+      const Offset(46, groundY - 18),
+      Paint()
+        ..color = PaintKit.nightTint(const Color(0xFF7A7F86), n)
+        ..strokeWidth = 0.9,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(46, groundY - 25)
+        ..lineTo(51, groundY - 17)
+        ..lineTo(41, groundY - 17)
+        ..close(),
+      Paint()..color = PaintKit.nightTint(const Color(0xFFF5C542), n),
+    );
+    canvas.drawRect(const Rect.fromLTWH(45.6, groundY - 22.5, 0.8, 3), Paint()..color = Colors.black);
+    canvas.drawCircle(const Offset(46, groundY - 18.6), 0.45, Paint()..color = Colors.black);
+
     // --------------------------------------------------- Samson direği
+    // Arka bacak çifti (derinlik): daha koyu ve hafif kaydırılmış.
+    PaintKit.shadedBar(canvas, const Offset(72, groundY - 9), pivot + const Offset(1, 2), 3, darkSteel, night: n);
+    PaintKit.shadedBar(canvas, const Offset(113, groundY - 9), pivot + const Offset(6, 2), 3, darkSteel, night: n);
     final legC = steel;
     PaintKit.shadedBar(canvas, const Offset(66, groundY - 6), pivot + const Offset(-3, 4), 3.6, legC, night: n);
     PaintKit.shadedBar(canvas, const Offset(108, groundY - 6), pivot + const Offset(3, 4), 3.6, legC, night: n);
@@ -160,9 +222,60 @@ class PumpjackPainter extends CustomPainter {
       canvas.drawLine(Offset(x - 1, y), Offset(x + 3, y), ladder);
     }
 
+    // Pas izleri
+    final rust = Paint()
+      ..strokeWidth = 0.7
+      ..color = PaintKit.nightTint(const Color(0xFF8A4A22), n).withValues(alpha: 0.45);
+    for (final (x0, y0, len) in [(80.0, 60.0, 9.0), (100.0, 74.0, 7.0), (74.0, 92.0, 6.0)]) {
+      canvas.drawLine(Offset(x0, y0), Offset(x0 + 0.3, y0 + len), rust);
+    }
+
+    // Arka krank kolu ve karşı ağırlığı (dişli kutusunun arkasında)
+    {
+      final backPin = pin + const Offset(4, -3);
+      final backCenter = crankCenter + const Offset(4, -3);
+      final backWeight = backCenter - (backPin - backCenter) * 0.85;
+      PaintKit.shadedBar(canvas, backWeight, backPin, 5, const Color(0xFF3A3F45), night: n);
+      PaintKit.sphere(canvas, backWeight, 8, const Color(0xFF3A3F45), night: n);
+    }
+
     // ------------------------------------------- Dişli kutusu & motor
     PaintKit.box(canvas, const Rect.fromLTWH(134, 101, 36, 11), const Color(0xFF4B4F55), night: n, depth: 3);
-    PaintKit.box(canvas, const Rect.fromLTWH(140, 80, 26, 21), const Color(0xFF3E5B78), night: n, depth: 4);
+    PaintKit.softShadow(canvas, const Rect.fromLTWH(132, 108, 42, 6), opacity: 0.4, blur: 2);
+    // Klasik kubbeli redüktör gövdesi
+    final housing = Path()
+      ..moveTo(139, 101)
+      ..lineTo(139, 90)
+      ..quadraticBezierTo(140, 79, 153, 78)
+      ..quadraticBezierTo(166, 79, 167, 90)
+      ..lineTo(167, 101)
+      ..close();
+    canvas.drawPath(
+      housing,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          const Offset(139, 78),
+          const Offset(167, 101),
+          [
+            PaintKit.nightTint(const Color(0xFF5C7C9C), n),
+            PaintKit.nightTint(const Color(0xFF3E5B78), n),
+            PaintKit.nightTint(const Color(0xFF263A4F), n),
+          ],
+          const [0, 0.5, 1],
+        ),
+    );
+    final seam = Paint()
+      ..color = PaintKit.nightTint(const Color(0xFF1B2A3A), n)
+      ..strokeWidth = 0.9;
+    canvas.drawLine(const Offset(139, 91), const Offset(167, 91), seam);
+    for (var x = 142.0; x <= 165; x += 4.5) {
+      canvas.drawCircle(Offset(x, 91), 0.6, Paint()..color = PaintKit.nightTint(const Color(0xFFB9C2CC), n));
+    }
+    // İsim plakası
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(147, 94, 12, 4), const Radius.circular(0.6)),
+      Paint()..color = PaintKit.nightTint(const Color(0xFFC9CDD1), n),
+    );
     // Kayış koruyucu
     final guard = Path()
       ..moveTo(150, 84)
@@ -338,6 +451,36 @@ class PumpjackPainter extends CustomPainter {
       Rect.fromLTWH(wireX + 0.2, rodBottom - 6, 1.2, 6),
       Paint()..color = const Color(0xFF2B2420).withValues(alpha: 0.7),
     );
+
+    // Kiriş perçinleri
+    {
+      final rivet = Paint()..color = PaintKit.nightTint(Color.lerp(beamColor, Colors.white, 0.35)!, n);
+      final nrm2 = Offset(-u.dy, u.dx);
+      for (var d = -frontLen + 16; d < rearLen + 4; d += 7) {
+        final p = pivot + u * d;
+        canvas.drawCircle(p + nrm2 * 2.6, 0.45, rivet);
+        canvas.drawCircle(p - nrm2 * 2.6, 0.45, rivet);
+      }
+    }
+
+    // Krank etrafındaki emniyet çiti (tel örgü; arkası görünür)
+    {
+      final post = Paint()
+        ..color = PaintKit.nightTint(const Color(0xFFD9A62E), n)
+        ..strokeWidth = 1.1;
+      final mesh = Paint()
+        ..color = PaintKit.nightTint(const Color(0xFFB0B6BC), n).withValues(alpha: 0.35)
+        ..strokeWidth = 0.4;
+      const top = groundY - 20;
+      for (final x in [124.0, 146.0, 168.0, 190.0]) {
+        canvas.drawLine(Offset(x, groundY - 2), Offset(x, top), post);
+      }
+      canvas.drawLine(const Offset(124, top), const Offset(190, top), post);
+      for (var x = 124.0; x < 190; x += 3) {
+        canvas.drawLine(Offset(x, top), Offset(x + 3, groundY - 2), mesh);
+        canvas.drawLine(Offset(x + 3, top), Offset(x, groundY - 2), mesh);
+      }
+    }
 
     // Pivot yatağı
     PaintKit.box(

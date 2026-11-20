@@ -3,25 +3,29 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
+import '../../core/game/game_controller.dart';
 import '../../core/ui/premium.dart';
 import '../../core/visuals/landscape.dart';
 import '../../core/visuals/painters/derrick_painter.dart';
+import 'cinematic.dart';
 
-/// Premium açılış: gerçekçi manzara önünde amblem ve başlık. Oyun arkada
-/// yüklenir; birkaç saniye sonra (veya dokununca) yumuşakça açılır.
-class IntroGate extends StatefulWidget {
+/// Açılış kapısı. İlk açılışta (veya oyuncu ayarlardan isterse) Batman'ın
+/// petrol tarihini anlatan sinematiği gösterir; sonraki açılışlarda kısa,
+/// amblemli bir açılış ekranı gösterir. Oyun arkada yüklenir.
+class IntroGate extends ConsumerStatefulWidget {
   const IntroGate({super.key, required this.child, this.duration = const Duration(milliseconds: 3200)});
   final Widget child;
   final Duration duration;
 
   @override
-  State<IntroGate> createState() => _IntroGateState();
+  ConsumerState<IntroGate> createState() => _IntroGateState();
 }
 
-class _IntroGateState extends State<IntroGate> {
+class _IntroGateState extends ConsumerState<IntroGate> {
   bool _closing = false;
   bool _gone = false;
   Timer? _timer;
@@ -38,6 +42,17 @@ class _IntroGateState extends State<IntroGate> {
     setState(() => _closing = true);
   }
 
+  void _cinematicDone() {
+    final ctrl = ref.read(gameControllerProvider.notifier);
+    ctrl.setIntroSeen(true);
+    ctrl.save();
+    // Sinematikten sonra kısa açılış tekrar gösterilmez.
+    setState(() {
+      _closing = true;
+      _gone = true;
+    });
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -46,10 +61,13 @@ class _IntroGateState extends State<IntroGate> {
 
   @override
   Widget build(BuildContext context) {
+    final seen = ref.watch(gameControllerProvider.select((s) => s.introSeen));
     return Stack(
       children: [
         widget.child,
-        if (!_gone)
+        if (!seen)
+          Positioned.fill(child: CinematicIntro(onDone: _cinematicDone))
+        else if (!_gone)
           Positioned.fill(
             child: AnimatedOpacity(
               opacity: _closing ? 0 : 1,
@@ -90,7 +108,7 @@ class _IntroScene extends StatelessWidget {
             child: Column(
               children: [
                 const Spacer(flex: 5),
-                const SizedBox(width: 150, height: 150, child: CustomPaint(painter: _EmblemPainter()))
+                const SizedBox(width: 150, height: 150, child: CustomPaint(painter: EmblemPainter()))
                     .animate()
                     .fadeIn(duration: 700.ms)
                     .scale(begin: const Offset(0.7, 0.7), duration: 900.ms, curve: Curves.easeOutBack)
@@ -142,8 +160,8 @@ class _IntroScene extends StatelessWidget {
 }
 
 /// Amblem: altın çerçeveli altıgen, içinde sondaj kulesi ve petrol damlası.
-class _EmblemPainter extends CustomPainter {
-  const _EmblemPainter();
+class EmblemPainter extends CustomPainter {
+  const EmblemPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -238,5 +256,5 @@ class _EmblemPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_EmblemPainter old) => false;
+  bool shouldRepaint(EmblemPainter old) => false;
 }

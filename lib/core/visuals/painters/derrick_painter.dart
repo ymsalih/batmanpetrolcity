@@ -85,6 +85,26 @@ class DerrickPainter extends CustomPainter {
       }
     }
 
+    if (withSite) {
+      // Gergi halatları: direğin üst kısmından zemindeki çapalara.
+      final guy = Paint()
+        ..color = PaintKit.nightTint(const Color(0xFF8D959E), n).withValues(alpha: 0.55)
+        ..strokeWidth = 0.45;
+      canvas.drawLine(const Offset(cx - 6, topY + 30), const Offset(2, ground - 1), guy);
+      canvas.drawLine(const Offset(cx + 6, topY + 30), const Offset(98, ground - 1), guy);
+      canvas.drawLine(const Offset(cx - 5, topY + 60), const Offset(8, ground - 1), guy);
+      canvas.drawLine(const Offset(cx + 5, topY + 60), const Offset(92, ground - 1), guy);
+      // V-door rampası: boru rafından platforma eğimli kızak.
+      PaintKit.shadedBar(
+        canvas,
+        const Offset(14, ground - 3),
+        const Offset(30, floorY - 2),
+        2.4,
+        const Color(0xFF6E5F4C),
+        night: n,
+      );
+    }
+
     // Alt yapı (substructure)
     PaintKit.box(canvas, const Rect.fromLTWH(22, floorY, 56, ground - floorY), const Color(0xFF555C64), night: n);
     final x = Paint()
@@ -94,6 +114,18 @@ class DerrickPainter extends CustomPainter {
       final l = 22.0 + i * 18.6;
       canvas.drawLine(Offset(l, floorY + 2), Offset(l + 18.6, ground - 2), x);
       canvas.drawLine(Offset(l + 18.6, floorY + 2), Offset(l, ground - 2), x);
+    }
+    // Alt yapıya çıkan merdiven
+    if (withSite) {
+      final step = Paint()
+        ..color = PaintKit.nightTint(const Color(0xFFD9A62E), n)
+        ..strokeWidth = 0.8;
+      canvas.drawLine(const Offset(80, ground - 1), const Offset(72, floorY + 1), step);
+      for (var i = 1; i < 6; i++) {
+        final t = i / 6;
+        final p = Offset.lerp(const Offset(80, ground - 1), const Offset(72, floorY + 1), t)!;
+        canvas.drawLine(p, p + const Offset(4, 0), step);
+      }
     }
     // Platform
     PaintKit.box(canvas, const Rect.fromLTWH(16, floorY - 4, 68, 5), const Color(0xFF7A6A55), night: n, depth: 2);

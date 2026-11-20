@@ -66,6 +66,13 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: ctrl.setSound,
                 ),
                 ListTile(
+                  key: const Key('replay_intro'),
+                  leading: const Icon(Icons.movie_filter),
+                  title: const Text('Batman tanıtımını tekrar izle'),
+                  subtitle: const Text('Raman\'dan bugüne petrolün hikâyesi'),
+                  onTap: () => ctrl.setIntroSeen(false),
+                ),
+                ListTile(
                   leading: const Icon(Icons.school),
                   title: const Text('Usta\'nın rehberini tekrar izle'),
                   onTap: ctrl.restartTutorial,

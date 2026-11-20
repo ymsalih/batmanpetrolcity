@@ -28,6 +28,8 @@ class SynthAudioService implements AudioService {
     SoundCue.event: 0.45,
     SoundCue.repair: 0.45,
     SoundCue.message: 0.35,
+    SoundCue.whoosh: 0.4,
+    SoundCue.chime: 0.45,
   };
 
   final _pools = <SoundCue, List<AudioPlayer>>{};

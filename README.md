@@ -30,12 +30,34 @@ Ayrıca:
 - **Geri bildirim:** "+N varil" yükselen yazılar, parçacıklar, `HapticFeedback`.
 - **Kayıt:** `shared_preferences`, her 10 saniyede ve uygulama arka plana geçince otomatik.
 
+## Açılış sinematiği: Batman'ın petrol hikâyesi
+
+İlk açılışta yaklaşık 50 saniyelik, tamamen kodla çizilen ve animasyonlu bir tanıtım oynar. Ayarlar → *Batman tanıtımını tekrar izle* ile yeniden izlenebilir.
+
+| Bölüm | Anlatım | Sahne |
+|---|---|---|
+| 1940 · İlk damla | Raman Dağı eteğindeki Raman-1 kuyusunda Türkiye'nin ilk ekonomik petrol rezervi | Şafakta kule, ardından fışkırma ve ekran sarsıntısı |
+| 1948 · Kara altın akıyor | Raman'dan üretim törenle başlar | Tepelerde tek tek beliren at kafaları |
+| 1955 · İlk modern rafineri | Türkiye'nin ilk modern rafinerisi Batman'da | Gecede yerden yükselen rafineri, ışıklar, meşale |
+| 1957 → 1990 · Köyden şehre | İluh köyü ilçe olup Batman adını alır, 1990'da il olur | Kerpiç köyden şehre büyüyen, ışıkları yanan silüet |
+| 1961 · Batı Raman | Türkiye'nin en büyük petrol sahası | Uçsuz bucaksız at kafası tarlası |
+| Batman'ı tanı | Hasankeyf, Malabadi Köprüsü, sofra ve kültür | Çizimli tanıtım kartları |
+| Sıra sende | Oyuna giriş | Amblem, başlık, "Hikâyeni yazmaya başla" |
+
+- **Sinema hissi:** Sinema bantları, yavaş kamera yakınlaşması, film greni ve vinyet. Usta'nın ağzından daktilo efektli anlatım, sayarak beliren altın yıllar, geçişlerde kodla üretilmiş "whoosh" ve çan sesleri.
+- **Kontroller:** Üstte hikâye tarzı ilerleme çubukları ve **Geç** butonu var. Ekrana dokunmak metni tamamlar, ikinci dokunuş sonraki bölüme geçer.
+- **Sonraki açılışlar:** Kısa, amblemli açılış ekranı gösterilir.
+
+Tarih kaynakları: [Batman Belediyesi: Tarihçe](https://www.batman.bel.tr/icerik/tarihce), [Vikipedi: Batman Rafinerisi](https://tr.wikipedia.org/wiki/Batman_Rafinerisi),
+[DergiPark: Batman and TPC (TPAO)](https://dergipark.org.tr/en/download/article-file/1453626), [Wikipedia: Batman Province](https://en.wikipedia.org/wiki/Batman_Province),
+[Küre Ansiklopedi: Batman](https://kureansiklopedi.com/tr/detay/batman-il-5). Kaynaklar arasında bazı tarihler farklı verilir (ör. ilk keşif için 1940/1945/1946). Oyunda en yaygın kabul gören tarihler kullanılmıştır.
+
 ## Görsel gerçekçilik (görsel dosya olmadan)
 
 | Katman | Nasıl |
 |---|---|
-| **At kafası** | Gerçek dört-çubuk mekanizması: krank sabit hızla döner, biyel kolu sabit boydadır, kiriş açısı iki çemberin kesişiminden hesaplanır. At başı pivot merkezli bir yay olduğundan halat hep dikey sarkar ve cilalı çubuk düz iner. Metal gradyanlar, karşı ağırlık, kayış koruyucu, titreşen motor, egzoz dumanı, kuyu başında petrol lekesi, güneş yönüne göre düşen gölge, gece çalışma lambası. Her kuyu farklı fazda başlar. |
-| **Sondaj kulesi** | Alt yapı, platform, sondajcı kabini, dönen vinç tamburu, kafes direk, iniş-çıkış yapan makara bloğu, istiflenmiş borular, çamur tankları, dalgalanan bayrak, yanıp sönen ikaz lambası. |
+| **At kafası** | Arka A-çatı bacakları ve arkadaki ikinci krank/karşı ağırlık (derinlik), kubbeli redüktör gövdesi, tel örgülü emniyet çiti, manometre, ikinci vana, uyarı levhası, kiriş perçinleri, pas izleri. Kiriş ve at başının gölgesi sallanmayla birlikte yerde hareket eder. Gerçek dört-çubuk mekanizması: krank sabit hızla döner, biyel kolu sabit boydadır, kiriş açısı iki çemberin kesişiminden hesaplanır. At başı pivot merkezli bir yay olduğundan halat hep dikey sarkar ve cilalı çubuk düz iner. Metal gradyanlar, karşı ağırlık, kayış koruyucu, titreşen motor, egzoz dumanı, kuyu başında petrol lekesi, güneş yönüne göre düşen gölge, gece çalışma lambası. Her kuyu farklı fazda başlar. |
+| **Sondaj kulesi** | Gergi halatları, V-door rampası, alt yapı merdiveni, alt yapı, platform, sondajcı kabini, dönen vinç tamburu, kafes direk, iniş-çıkış yapan makara bloğu, istiflenmiş borular, çamur tankları, dalgalanan bayrak, yanıp sönen ikaz lambası. |
 | **Yer altı kesiti** | Dalgalı ve kubbeli (petrol kapanı) katman sınırları, tanecik dokusu, derinlikle artan karanlık, muhafaza borusu, halka boşlukta yukarı akan kırıntılar, üç konili dönen matkap. Petrol bulununca kuyuda petrol yükselir, ekran sarsılır, ardından fışkırma başlar. |
 | **Fışkırma** | Fiziksel parçacık sistemi (`core/visuals/particles.dart`): yerçekimi, hava direnci, rüzgâr, hıza göre uzayan damlalar, yere çarpınca sıçrama, hacimle büyüyen ve yanardöner petrol gölü, sis. |
 | **Shader'lar** (`shaders/*.frag`, GLSL kodu) | `sky.frag`: fbm gürültülü hareketli bulutlar, güneş ışıması, gece yıldızları. `heat_haze.frag`: Batman sıcağı sırasında ekranı kaplayan ısı dalgası. `oil_sheen.frag`: rezervuarda ince film yanardönerliği. Shader yüklenemezse gradyan yedeğine düşülür. |
