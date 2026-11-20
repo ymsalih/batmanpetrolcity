@@ -10,6 +10,7 @@ import 'package:batman_petrol_agasi/core/models/parcel.dart';
 import 'package:batman_petrol_agasi/core/models/worker.dart';
 import 'package:batman_petrol_agasi/core/persistence/save_repository.dart';
 import 'package:batman_petrol_agasi/core/services/services.dart';
+import 'package:batman_petrol_agasi/features/crew/crew_lines.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -65,11 +66,39 @@ void main() {
       expect(Crew.promoteCost(w('isci', rank: 1)), greaterThan(Crew.promoteCost(w('isci'))));
     });
 
-    test('varsayılan ad görev adıdır; isim verilince o görünür', () {
-      expect(w('derikmen').displayName, 'Derikmen');
-      expect(w('isci', number: 3).displayName, 'İşçi 3');
-      expect(w('sondor').copyWith(name: 'Şeyhmus').displayName, 'Şeyhmus');
-      expect(w('sondor', rank: 2).subtitle, 'Sondör · Usta');
+    test('unvanlar görevin gerçek kariyer basamaklarıdır', () {
+      expect(w('sondor').rankTitle, 'Sondör Muavini');
+      expect(w('sondor', rank: 3).rankTitle, 'Başsondör');
+      expect(w('sondor', rank: 4).rankTitle, 'Sondaj Amiri');
+      expect(w('derikmen').rankTitle, 'Masa İşçisi');
+      expect(w('derikmen', rank: 2).rankTitle, 'Derikmen');
+      expect(w('derikmen', rank: 2).nextRankTitle, 'Kıdemli Derikmen');
+      expect(w('mekanik', rank: 1).rankTitle, 'Makinist');
+      expect(w('sondor', rank: 4).isMaxRank, isTrue);
+      for (final role in GameConfig.crewRoles) {
+        expect(role.ranks.length, greaterThanOrEqualTo(3), reason: role.id);
+        expect(role.ranks.toSet().length, role.ranks.length, reason: '${role.id} tekrar eden unvan');
+      }
+    });
+
+    test('herkesin kişisel adı var; adlar ekipte tekrar etmez', () {
+      expect(GameConfig.crewNames, contains(w('sondor').displayName));
+      expect(w('sondor').copyWith(name: 'Şeyhmus').fullTitle, 'Şeyhmus · Sondör Muavini');
+      final used = <String>[];
+      for (var id = 1; id <= 30; id++) {
+        final n = Worker.pickName(id, used);
+        expect(used, isNot(contains(n)));
+        used.add(n);
+      }
+    });
+
+    test('kule mühendisi tüm ekibin etkisini büyütür', () {
+      final base = Crew.of([w('pompaci')]).productionMultiplier - 1;
+      final led = Crew.of([w('pompaci'), w('muhendis', id: 2, rank: 4)]).productionMultiplier - 1;
+      expect(led, closeTo(base * 1.25, 1e-9));
+      final repair = Crew.of([w('mekanik')]).autoRepairSeconds!;
+      final ledRepair = Crew.of([w('mekanik'), w('muhendis', id: 2, rank: 4)]).autoRepairSeconds!;
+      expect(ledRepair, lessThan(repair));
     });
   });
 
@@ -148,23 +177,31 @@ void main() {
       expect(ctrl.hire('derikmen'), ActionResult.maxLevel);
       final id = c.read(gameControllerProvider).workers.single.id;
 
-      for (var i = 0; i < GameConfig.crewRanks.length - 1; i++) {
+      expect(c.read(gameControllerProvider).workerById(id)!.name, isNotNull);
+      for (var i = 0; i < GameConfig.crewRole('derikmen').maxRank; i++) {
         expect(ctrl.promote(id), ActionResult.ok);
       }
       expect(ctrl.promote(id), ActionResult.maxLevel);
-      expect(c.read(gameControllerProvider).workerById(id)!.rankTitle, 'Şef');
+      expect(c.read(gameControllerProvider).workerById(id)!.rankTitle, 'Sondör Muavini');
 
       ctrl.rename(id, '  Hamit Usta ile Uzun Bir İsim Denemesi  ');
       expect(c.read(gameControllerProvider).workerById(id)!.displayName.length, Worker.maxNameLength);
       ctrl.rename(id, '');
-      expect(c.read(gameControllerProvider).workerById(id)!.displayName, 'Derikmen');
+      expect(GameConfig.crewNames, contains(c.read(gameControllerProvider).workerById(id)!.displayName));
+
+      ctrl.setPlayerName('Hamit');
+      expect(c.read(gameControllerProvider).address, 'Hamit Ağa');
+      ctrl.setPlayerName('  ');
+      expect(c.read(gameControllerProvider).address, 'ağam');
 
       for (var i = 0; i < 6; i++) {
         expect(ctrl.hire('isci'), ActionResult.ok);
       }
       expect(ctrl.hire('isci'), ActionResult.maxLevel);
-      final numbers = c.read(gameControllerProvider).workers.where((x) => x.roleId == 'isci').map((x) => x.number);
-      expect(numbers, [1, 2, 3, 4, 5, 6]);
+      final workers = c.read(gameControllerProvider).workers;
+      expect(workers.where((x) => x.roleId == 'isci').map((x) => x.number), [1, 2, 3, 4, 5, 6]);
+      final names = workers.map((x) => x.displayName).toList();
+      expect(names.toSet().length, names.length, reason: 'her işçinin farklı adı olmalı');
     });
 
     test('yetersiz bakiyede işe alınamaz', () {
@@ -181,6 +218,36 @@ void main() {
       ctrl.startDrill('raman', 0);
       final p = c.read(gameControllerProvider).site('raman').parcels[0];
       expect(p.drillDurationMs, (GameConfig.site('raman').drillSeconds * 1000 * 0.6).round());
+    });
+  });
+
+  group('Replikler', () {
+    test('her görevin her rütbe kademesi için sohbeti var', () {
+      for (final role in GameConfig.crewRoles) {
+        for (var rank = 0; rank <= role.maxRank; rank++) {
+          final worker = w(role.id, rank: rank);
+          expect(CrewLines.chatFor(worker), isNotEmpty, reason: '${role.id} rütbe $rank');
+          expect(CrewLines.of(role.id, CrewTopic.hired), isNotEmpty, reason: '${role.id} işe alım');
+        }
+      }
+    });
+
+    test('rütbe kademeleri doğru ayrılır', () {
+      expect(CrewLines.tierOf(w('sondor')), RankTier.junior);
+      expect(CrewLines.tierOf(w('sondor', rank: 2)), RankTier.mid);
+      expect(CrewLines.tierOf(w('sondor', rank: 3)), RankTier.senior);
+    });
+
+    test('şablonlar doldurulur, boş yer tutucu kalmaz', () {
+      final worker = w('sondor', rank: 3).copyWith(name: 'Reşit');
+      for (final tier in RankTier.values) {
+        for (final line in CrewLines.promoted[tier]!) {
+          final t = CrewLines.fill(line, address: 'Hamit Ağa', worker: worker);
+          expect(t, isNot(contains('{')));
+          expect(t, contains('Başsondör'));
+        }
+      }
+      expect(CrewLines.fill('{ağa}, kuyu durdu!', address: 'ağam'), 'Ağam, kuyu durdu!');
     });
   });
 }

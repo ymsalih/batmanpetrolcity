@@ -25,8 +25,7 @@ class UstaBubble extends ConsumerWidget {
             text: msg.text,
             mood: msg.mood,
             speakerName: worker?.displayName,
-            // İsim verilmemişse ad zaten görev adıdır; tekrar etmesin.
-            speakerSubtitle: worker == null ? null : (worker.name == null ? worker.rankTitle : worker.subtitle),
+            speakerSubtitle: worker?.rankTitle,
             avatar: worker == null ? null : WorkerAvatar(worker: worker, mood: msg.mood),
           ),
         )

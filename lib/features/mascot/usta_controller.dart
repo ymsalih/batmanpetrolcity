@@ -51,7 +51,10 @@ class UstaController extends Notifier<UstaMessage?> {
     int? workerId,
   }) {
     _hide?.cancel();
-    state = UstaMessage(text, mood, _seq++, workerId: workerId);
+    final game = ref.read(gameControllerProvider);
+    final worker = workerId == null ? null : game.workerById(workerId);
+    final filled = CrewLines.fill(text, address: game.address, worker: worker);
+    state = UstaMessage(filled, mood, _seq++, workerId: workerId);
     _hide = Timer(duration, dismiss);
   }
 
@@ -69,9 +72,9 @@ class UstaController extends Notifier<UstaMessage?> {
 
   void noMoney() => say(_pick(UstaLines.noMoney), mood: UstaMood.worried);
 
-  /// Ekip ekranında karta dokununca işçi sohbet eder.
+  /// Ekip ekranında karta dokununca işçi rütbesine uygun sohbet eder.
   void chatWith(Worker w) {
-    final lines = CrewLines.of(w.roleId, CrewTopic.chat);
+    final lines = CrewLines.chatFor(w);
     if (lines.isEmpty) return;
     say(_pick(lines), mood: UstaMood.happy, workerId: w.id, duration: const Duration(seconds: 4));
   }
@@ -141,7 +144,7 @@ class UstaController extends Notifier<UstaMessage?> {
       case CrewChanged(:final workerId, :final promoted):
         final w = ref.read(gameControllerProvider).workerById(workerId);
         if (w == null) return;
-        final lines = CrewLines.of(w.roleId, promoted ? CrewTopic.promoted : CrewTopic.hired);
+        final lines = promoted ? CrewLines.promotedFor(w) : CrewLines.of(w.roleId, CrewTopic.hired);
         if (lines.isNotEmpty) say(_pick(lines), mood: UstaMood.excited, workerId: w.id);
       case _:
         break;

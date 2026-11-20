@@ -14,6 +14,7 @@ class Crew {
     this.priceMultiplier = 1,
     this.autoRepairSeconds,
     this.autoCollectSeconds,
+    this.leadership = 0,
   });
 
   static const none = Crew();
@@ -30,6 +31,9 @@ class Crew {
   /// null: tanker şoförü yok.
   final double? autoCollectSeconds;
 
+  /// Kule mühendisinin ekibe kattığı oran.
+  final double leadership;
+
   /// Tek bir işçinin kendi görevindeki etki değeri (oran ya da saniye).
   static double skillValue(CrewRoleConfig role, int rank) {
     final level = rank + 1;
@@ -41,6 +45,12 @@ class Crew {
 
   factory Crew.of(List<Worker> workers) {
     if (workers.isEmpty) return none;
+    // Kule mühendisi tüm ekibin etkisini büyütür.
+    var lead = 0.0;
+    for (final w in workers) {
+      if (w.role.skill == CrewSkill.leadership) lead += skillValue(w.role, w.rank);
+    }
+    final amp = 1 + lead;
     var drill = 1.0;
     var tap = 0.0;
     var dry = 0.0;
@@ -50,10 +60,14 @@ class Crew {
     double? collect;
     for (final w in workers) {
       final role = w.role;
-      final v = skillValue(role, w.rank);
+      final raw = skillValue(role, w.rank);
+      final isTime = role.skill == CrewSkill.autoRepair || role.skill == CrewSkill.autoCollect;
+      final v = isTime ? raw / amp : raw * amp;
       switch (role.skill) {
+        case CrewSkill.leadership:
+          break;
         case CrewSkill.drillSpeed:
-          drill *= 1 - v;
+          drill *= 1 - v.clamp(0.0, 0.9);
         case CrewSkill.tapPower:
           tap += v;
         case CrewSkill.dryChance:
@@ -76,6 +90,7 @@ class Crew {
       priceMultiplier: 1 + price,
       autoRepairSeconds: repair,
       autoCollectSeconds: collect,
+      leadership: lead,
     );
   }
 
@@ -91,14 +106,19 @@ class Crew {
   static String effectText(CrewRoleConfig role, int rank) {
     final v = skillValue(role, rank);
     String pct(double x) => '%${Fmt.decimal(x * 100, 0)}';
+    // Kırılmaz boşluk + gerçek eksi işareti: dar ekranda "-" ile "%32"
+    // farklı satırlara bölünmesin.
+    const nb = '\u00A0';
+    const minus = '\u2212';
     return switch (role.skill) {
-      CrewSkill.drillSpeed => 'Sondaj süresi -${pct(v)}',
-      CrewSkill.tapPower => 'Dokunuş gücü +${pct(v)}',
-      CrewSkill.dryChance => 'Kuru kuyu ihtimali -${pct(v)}',
-      CrewSkill.production => 'Üretim +${pct(v)}',
-      CrewSkill.price => 'Satış fiyatı +${pct(v)}',
-      CrewSkill.autoRepair => 'Arızayı ${Fmt.integer(v)} sn içinde tamir eder',
-      CrewSkill.autoCollect => 'Depoları her ${Fmt.integer(v)} sn boşaltır',
+      CrewSkill.drillSpeed => 'Sondaj süresi$nb$minus${pct(v)}',
+      CrewSkill.tapPower => 'Dokunuş gücü$nb+${pct(v)}',
+      CrewSkill.dryChance => 'Kuru kuyu ihtimali$nb$minus${pct(v)}',
+      CrewSkill.production => 'Üretim$nb+${pct(v)}',
+      CrewSkill.price => 'Satış fiyatı$nb+${pct(v)}',
+      CrewSkill.autoRepair => 'Arızayı ${Fmt.integer(v)}${nb}sn içinde tamir eder',
+      CrewSkill.autoCollect => 'Depoları her ${Fmt.integer(v)}${nb}sn boşaltır',
+      CrewSkill.leadership => 'Tüm ekibin etkisi$nb+${pct(v)}',
     };
   }
 }

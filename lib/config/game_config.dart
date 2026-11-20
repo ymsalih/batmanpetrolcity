@@ -108,6 +108,9 @@ enum CrewSkill {
 
   /// Satış fiyatını artırır.
   price,
+
+  /// Kule mühendisi: tüm ekibin etkisini büyütür.
+  leadership,
 }
 
 /// Bir ekip görevi (rolü). Yeni görev eklemek için [GameConfig.crewRoles]
@@ -121,6 +124,7 @@ class CrewRoleConfig {
     required this.perRank,
     required this.hireCost,
     required this.helmetColor,
+    required this.ranks,
     this.base = 0,
     this.maxCount = 1,
   });
@@ -144,6 +148,12 @@ class CrewRoleConfig {
 
   /// Baret rengi (ARGB).
   final int helmetColor;
+
+  /// Bu görevin gerçek kariyer basamakları (düşükten yükseğe). İşçinin
+  /// rütbesi aynı zamanda sahadaki unvanıdır (ör. Sondör → Başsondör).
+  final List<String> ranks;
+
+  int get maxRank => ranks.length - 1;
 }
 
 enum GameEventKind { heatWave, priceSpike, breakdown }
@@ -373,8 +383,11 @@ abstract final class GameConfig {
   ];
 
   // ---------------------------------------------------------------- Ekip
-  /// Rütbeler (düşükten yükseğe). Rütbe yükseldikçe görev etkisi büyür.
-  static const List<String> crewRanks = ['Çırak', 'Kalfa', 'Usta', 'Ustabaşı', 'Şef'];
+  //
+  // Unvanlar Türkiye'deki kara sondaj sahalarında kullanılan kadrolardan
+  // alınmıştır. Klasik kariyer yolu: vasıfsız işçi → anahtarcı (masa işçisi)
+  // → derikmen → sondör muavini → sondör → başsondör → sondaj amiri
+  // (tulpuşer). Sahanın başında kule mühendisi bulunur.
 
   /// Terfi bedeli = işe alma bedeli x büyüme^(mevcut rütbe + 1).
   static const double crewPromoteGrowth = 2.2;
@@ -385,33 +398,93 @@ abstract final class GameConfig {
   /// Ekibin konuşma olasılığı (olay başına); kalan durumlarda Usta konuşur.
   static const double crewTalkChance = 0.65;
 
+  /// İşe alınan işçiye verilen varsayılan adlar (oyuncu değiştirebilir).
+  static const List<String> crewNames = [
+    'Şeyhmus',
+    'Abdulkadir',
+    'Mehmet Emin',
+    'Hamit',
+    'Reşit',
+    'Nurettin',
+    'Selahattin',
+    'Cemil',
+    'Ramazan',
+    'Hüseyin',
+    'Abdullah',
+    'Mahmut',
+    'Zeki',
+    'Fahri',
+    'Sait',
+    'Necmettin',
+    'Kadri',
+    'Bedirhan',
+    'Halil',
+    'İbrahim',
+    'Yusuf',
+    'Ömer',
+    'Musa',
+    'Cihan',
+    'Serhat',
+    'Baran',
+    'Diyar',
+    'Zeynep',
+    'Ayşe',
+    'Leyla',
+    'Gülistan',
+    'Rojda',
+    'Berfin',
+    'Hatice',
+    'Nazlı',
+    'Fatma',
+    'Vedat',
+    'Kemal',
+    'Süleyman',
+    'Ferhat',
+    'Mirza',
+    'Nasır',
+    'Yasin',
+  ];
+
   static const List<CrewRoleConfig> crewRoles = [
+    CrewRoleConfig(
+      id: 'muhendis',
+      title: 'Kule Mühendisi',
+      description: 'Sahayı yönetir, ekibi koordine eder. Tüm ekibin etkisini büyütür.',
+      skill: CrewSkill.leadership,
+      perRank: 0.05,
+      hireCost: 15000,
+      helmetColor: 0xFFFFFFFF,
+      ranks: ['Stajyer Mühendis', 'Kule Mühendisi', 'Kıdemli Kule Mühendisi', 'Şirket Temsilcisi', 'Saha Müdürü'],
+    ),
     CrewRoleConfig(
       id: 'sondor',
       title: 'Sondör',
-      description: 'Sondajı yönetir. Sondaj süresini kısaltır.',
+      description: 'Vinç başında sondajı yönetir. Sondaj süresini kısaltır.',
       skill: CrewSkill.drillSpeed,
       perRank: 0.08,
       hireCost: 1200,
       helmetColor: 0xFFF5C542,
+      ranks: ['Sondör Muavini', 'Sondör', 'Kıdemli Sondör', 'Başsondör', 'Sondaj Amiri'],
     ),
     CrewRoleConfig(
       id: 'derikmen',
       title: 'Derikmen',
-      description: 'Kule tepesinde boruları dizer. Dokunuşların sondajı daha çok hızlandırır.',
+      description: 'Kule tepesinde (monkey board) boruları dizer. Dokunuşların sondajı daha çok hızlandırır.',
       skill: CrewSkill.tapPower,
       perRank: 0.3,
       hireCost: 900,
-      helmetColor: 0xFFFFFFFF,
+      helmetColor: 0xFFE0E0E0,
+      ranks: ['Masa İşçisi', 'Anahtarcı', 'Derikmen', 'Kıdemli Derikmen', 'Sondör Muavini'],
     ),
     CrewRoleConfig(
       id: 'jeolog',
       title: 'Jeolog',
-      description: 'Katmanları okur. Kuru kuyu ihtimalini düşürür.',
+      description: 'Kırıntıları ve katmanları okur. Kuru kuyu ihtimalini düşürür.',
       skill: CrewSkill.dryChance,
       perRank: 0.07,
       hireCost: 2500,
       helmetColor: 0xFF3D8BC9,
+      ranks: ['Çamur Logcusu', 'Kuyu Jeoloğu', 'Kıdemli Jeolog', 'Baş Jeolog', 'Arama Müdürü'],
     ),
     CrewRoleConfig(
       id: 'pompaci',
@@ -421,16 +494,18 @@ abstract final class GameConfig {
       perRank: 0.08,
       hireCost: 3000,
       helmetColor: 0xFFF07A2A,
+      ranks: ['Pompacı Yardımcısı', 'Pompacı', 'Üretim Operatörü', 'Kıdemli Operatör', 'Üretim Şefi'],
     ),
     CrewRoleConfig(
       id: 'mekanik',
-      title: 'Mekanikçi',
-      description: 'Arızalanan kuyuları sen dokunmadan tamir eder.',
+      title: 'Makinist',
+      description: 'Motorların ve pompaların bakımını yapar. Arızaları sen dokunmadan tamir eder.',
       skill: CrewSkill.autoRepair,
       base: 75,
       perRank: 12,
       hireCost: 4000,
       helmetColor: 0xFF3FAE5A,
+      ranks: ['Makinist Yardımcısı', 'Makinist', 'Kıdemli Makinist', 'Baş Makinist', 'Bakım Şefi'],
     ),
     CrewRoleConfig(
       id: 'sofor',
@@ -441,6 +516,7 @@ abstract final class GameConfig {
       perRank: 12,
       hireCost: 6000,
       helmetColor: 0xFF8E5BC2,
+      ranks: ['Stajyer Şoför', 'Tanker Şoförü', 'Kıdemli Şoför', 'Filo Sorumlusu', 'Lojistik Şefi'],
     ),
     CrewRoleConfig(
       id: 'tuccar',
@@ -450,16 +526,18 @@ abstract final class GameConfig {
       perRank: 0.05,
       hireCost: 8000,
       helmetColor: 0xFF2B2622,
+      ranks: ['Satış Elemanı', 'Tüccar', 'Kıdemli Tüccar', 'Satış Müdürü', 'Ticaret Müdürü'],
     ),
     CrewRoleConfig(
       id: 'isci',
-      title: 'İşçi',
-      description: 'Sahada her işe koşar. Üretime küçük ama sürekli katkı verir.',
+      title: 'Saha İşçisi',
+      description: 'Sahada her işe koşar (roustabout). Üretime küçük ama sürekli katkı verir.',
       skill: CrewSkill.production,
       perRank: 0.03,
       hireCost: 600,
       maxCount: 6,
       helmetColor: 0xFFD64541,
+      ranks: ['Vasıfsız İşçi', 'Saha İşçisi', 'Kıdemli Saha İşçisi', 'Ekip Başı', 'Saha Formeni'],
     ),
   ];
 

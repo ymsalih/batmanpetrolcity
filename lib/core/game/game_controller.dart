@@ -278,7 +278,14 @@ class GameController extends Notifier<GameState> {
     while (usedNumbers.contains(number)) {
       number++;
     }
-    final worker = Worker(id: state.nextWorkerId, roleId: roleId, number: number, hiredAtMs: now);
+    final id = state.nextWorkerId;
+    final worker = Worker(
+      id: id,
+      roleId: roleId,
+      number: number,
+      hiredAtMs: now,
+      name: Worker.pickName(id, state.workers.map((w) => w.displayName)),
+    );
     state = state.copyWith(workers: [...state.workers, worker], nextWorkerId: state.nextWorkerId + 1);
     _emit(CrewChanged(worker.id));
     return ActionResult.ok;
@@ -295,13 +302,26 @@ class GameController extends Notifier<GameState> {
     return ActionResult.ok;
   }
 
-  /// İşçiye isim verir. Boş isim görev adına geri döner.
+  /// İşçiye isim verir. Boş isim verilirse ekipte kullanılmayan bir ad atanır.
   void rename(int workerId, String name) {
     final w = state.workerById(workerId);
     if (w == null) return;
     final clean = name.trim();
     final limited = clean.length > Worker.maxNameLength ? clean.substring(0, Worker.maxNameLength) : clean;
-    _replaceWorker(limited.isEmpty ? w.copyWith(clearName: true) : w.copyWith(name: limited));
+    final next = limited.isNotEmpty
+        ? limited
+        : Worker.pickName(
+            w.id + state.nextWorkerId,
+            state.workers.where((x) => x.id != w.id).map((x) => x.displayName),
+          );
+    _replaceWorker(w.copyWith(name: next));
+  }
+
+  /// Oyuncunun adı (işçiler "Ad Ağa" diye hitap eder). Boşsa "ağam".
+  void setPlayerName(String name) {
+    final clean = name.trim();
+    final limited = clean.length > Worker.maxNameLength ? clean.substring(0, Worker.maxNameLength) : clean;
+    state = state.copyWith(playerName: limited, clearPlayerName: limited.isEmpty);
   }
 
   void _replaceWorker(Worker w) {

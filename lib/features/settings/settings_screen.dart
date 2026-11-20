@@ -31,6 +31,19 @@ class SettingsScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: [
+                ListTile(
+                  key: const Key('player_name'),
+                  leading: const Icon(Icons.badge),
+                  title: const Text('Ağa adın'),
+                  subtitle: Text(
+                    s.playerName == null
+                        ? 'İşçiler sana "ağam" diyor. Adını yaz, adınla çağırsınlar.'
+                        : 'İşçiler sana "${s.address}" diyor.',
+                  ),
+                  trailing: const Icon(Icons.edit, size: 20),
+                  minVerticalPadding: 12,
+                  onTap: () => _editPlayerName(context, ref, s.playerName),
+                ),
                 SwitchListTile(
                   title: const Text('Titreşim'),
                   secondary: const Icon(Icons.vibration),
@@ -140,6 +153,34 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _editPlayerName(BuildContext context, WidgetRef ref, String? current) async {
+    final controller = TextEditingController(text: current ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ağa adın'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 18,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            hintText: 'Ör. Hamit',
+            helperText: 'İleride kullanıcı adın olarak da kullanılabilir',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
+          TextButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Kaydet')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result != null) ref.read(gameControllerProvider.notifier).setPlayerName(result);
   }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {

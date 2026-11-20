@@ -55,24 +55,32 @@ Shader'lar `ShaderSlot` ile widget başına kalıcı tutulur. Her çizimde yeni 
 
 ## Ekip (işçiler)
 
-Usta'nın yanında sahada bir ekip çalışır. Her işçinin bir **görevi** ve **rütbesi** vardır
-(Çırak → Kalfa → Usta → Ustabaşı → Şef). Rütbe yükseldikçe görevini daha iyi yapar.
+Usta'nın yanında sahada bir ekip çalışır. Her işçinin bir **adı**, bir **görevi** ve görevine özgü
+**gerçek bir unvanı** (rütbesi) vardır. Unvanlar Türkiye'deki kara sondaj sahalarında kullanılan
+kadrolardan alınmıştır. Klasik kariyer yolu şöyledir: vasıfsız işçi → anahtarcı (masa işçisi) → derikmen →
+sondör muavini → sondör → başsondör → sondaj amiri (tulpuşer). Sahanın başında kule mühendisi bulunur.
 
-| Görev | Etki |
-|---|---|
-| Sondör | Sondaj süresini kısaltır |
-| Derikmen | Dokunuşların sondajı hızlandırma gücünü artırır |
-| Jeolog | Kuru kuyu ihtimalini düşürür |
-| Pompacı | Üretimi artırır |
-| Mekanikçi | Arızalı kuyuları kendiliğinden tamir eder |
-| Tanker Şoförü | Depoları düzenli boşaltır (çevrimdışıyken de) |
-| Tüccar | Satış fiyatını artırır |
-| İşçi (6 kişiye kadar) | Üretime küçük katkı |
+| Görev | Unvan basamakları | Etki |
+|---|---|---|
+| Kule Mühendisi | Stajyer Mühendis → Kule Mühendisi → Kıdemli Kule Mühendisi → Şirket Temsilcisi → Saha Müdürü | Tüm ekibin etkisini büyütür |
+| Sondör | Sondör Muavini → Sondör → Kıdemli Sondör → Başsondör → Sondaj Amiri | Sondaj süresini kısaltır |
+| Derikmen | Masa İşçisi → Anahtarcı → Derikmen → Kıdemli Derikmen → Sondör Muavini | Dokunuş gücünü artırır |
+| Jeolog | Çamur Logcusu → Kuyu Jeoloğu → Kıdemli Jeolog → Baş Jeolog → Arama Müdürü | Kuru kuyu ihtimalini düşürür |
+| Pompacı | Pompacı Yardımcısı → Pompacı → Üretim Operatörü → Kıdemli Operatör → Üretim Şefi | Üretimi artırır |
+| Makinist | Makinist Yardımcısı → Makinist → Kıdemli Makinist → Baş Makinist → Bakım Şefi | Arızaları kendiliğinden tamir eder |
+| Tanker Şoförü | Stajyer Şoför → Tanker Şoförü → Kıdemli Şoför → Filo Sorumlusu → Lojistik Şefi | Depoları düzenli boşaltır (çevrimdışı dahil) |
+| Tüccar | Satış Elemanı → Tüccar → Kıdemli Tüccar → Satış Müdürü → Ticaret Müdürü | Satış fiyatını artırır |
+| Saha İşçisi (6 kişi) | Vasıfsız İşçi → Saha İşçisi → Kıdemli Saha İşçisi → Ekip Başı → Saha Formeni | Üretime küçük katkı |
 
-- İsim verilmezse görev adı kullanılır (ör. "Derikmen", "İşçi 2"); oyuncu kalem ikonuyla isim verebilir (en fazla 18 karakter).
-- İşçiler olaylara görevlerine göre Batman ağzıyla tepki verir; ekip kartında avatara dokununca sohbet eder.
-- Görev, rütbe, bedel ve etkiler `GameConfig.crewRoles` / `crewRanks` içindedir; yeni görev eklemek tek satırdır.
-- Saf hesaplamalar `core/economy/crew.dart` içindedir ve unit testlidir.
+- **Adlar:** İşe alınan herkese bölgede yaygın bir ad verilir (Şeyhmus, Abdulkadir, Zeynep, Rojda...). Adlar ekipte tekrar etmez; oyuncu kalemle değiştirebilir. İleride kullanıcı adlarına bağlanabilir.
+- **Oyuncu adı:** Ayarlar → *Ağa adın*. İşçiler oyuncuya bu adla ("Hamit Ağa") ya da ad yoksa "ağam" diye hitap eder.
+- **Rütbeye göre konuşma:** Her görevin yeni (ilk iki basamak), orta ve kıdemli kademesi için ayrı sohbet replikleri vardır. Terfide işçi yeni unvanını söyler. Olaylarda göreviyle ilgili işçi konuşur.
+- Görevler, unvanlar, bedeller ve etkiler `GameConfig.crewRoles` içindedir. Replikler `features/crew/crew_lines.dart` içindedir ({ağa}, {unvan}, {ad} şablonları kullanılır).
+
+Unvan kaynakları: [Rigzone: Toolpusher kariyer yolu](https://www.rigzone.com/insights/career-advice-4/how-to-become-a-toolpusher-in-offshore-drilling-635/),
+[Penn State PNG 301](https://www.e-education.psu.edu/png301/node/724), [SLB Glossary: drilling crew](https://glossary.slb.com/terms/d/drilling_crew),
+[Sondaj Terimleri (sondajcılar)](https://sondajcilar.wordpress.com/2012/03/28/sondaj-terimleri/), [Sondaj Bilgisi ders notu](http://www.kursatozcan.com/ders_notlari/sondaj_teknigi/turhan_ayyildiz_sondaj_bilgisi.pdf),
+[TPAO işçi alım ilanı (Kule İşçisi/Derikmen)](https://ilan.memurlar.net/ilan/6082/tpao-isci-alim-ilani.html).
 
 ## Mobil öncelik
 

@@ -67,6 +67,7 @@ class GameState {
     this.nextWorkerId = 1,
     this.nextAutoCollectMs = 0,
     this.lowGraphics = false,
+    this.playerName,
     this.offlineReport,
   });
 
@@ -116,6 +117,12 @@ class GameState {
 
   /// Pil/performans için düşük grafik modu.
   final bool lowGraphics;
+
+  /// Oyuncunun adı (ileride kullanıcı adı). İşçiler bu adla hitap eder.
+  final String? playerName;
+
+  /// Hitap: "Hamit Ağa" ya da ad yoksa "ağam".
+  String get address => (playerName == null || playerName!.isEmpty) ? 'ağam' : '$playerName Ağa';
 
   /// Ekibin toplam etkisi.
   Crew get crew => Crew.of(workers);
@@ -176,6 +183,8 @@ class GameState {
     int? nextWorkerId,
     int? nextAutoCollectMs,
     bool? lowGraphics,
+    String? playerName,
+    bool clearPlayerName = false,
     OfflineReport? offlineReport,
     bool clearOfflineReport = false,
   }) {
@@ -200,6 +209,7 @@ class GameState {
       nextWorkerId: nextWorkerId ?? this.nextWorkerId,
       nextAutoCollectMs: nextAutoCollectMs ?? this.nextAutoCollectMs,
       lowGraphics: lowGraphics ?? this.lowGraphics,
+      playerName: clearPlayerName ? null : (playerName ?? this.playerName),
       offlineReport: clearOfflineReport ? null : (offlineReport ?? this.offlineReport),
     );
   }
@@ -226,6 +236,7 @@ class GameState {
     'nw': nextWorkerId,
     'nac': nextAutoCollectMs,
     'lg': lowGraphics,
+    if (playerName != null) 'pn': playerName,
   };
 
   /// Eski kayıtlar ve config'e sonradan eklenen sahalar için toleranslı okuma.
@@ -265,6 +276,7 @@ class GameState {
       nextWorkerId: (j['nw'] as num?)?.toInt() ?? 1,
       nextAutoCollectMs: (j['nac'] as num?)?.toInt() ?? 0,
       lowGraphics: j['lg'] as bool? ?? false,
+      playerName: j['pn'] as String?,
     );
   }
 }

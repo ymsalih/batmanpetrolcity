@@ -1,8 +1,9 @@
 import '../../config/game_config.dart';
 
-/// Ekipteki bir işçi. Her işçinin bir görevi (rol) ve rütbesi vardır.
-/// [name] boşsa görev adı kullanılır (ör. "Derikmen", "İşçi 2"); oyuncu
-/// dilediği zaman kendi ismini verebilir.
+/// Ekipteki bir işçi. Her işçinin bir adı, bir görevi (rol) ve görevine
+/// özgü gerçek bir unvanı/rütbesi vardır (ör. Sondör Muavini → Başsondör).
+/// Ad işe alınırken verilir; oyuncu dilediği zaman değiştirebilir.
+/// İleride kullanıcı adları bu alana bağlanabilir.
 class Worker {
   const Worker({
     required this.id,
@@ -19,7 +20,7 @@ class Worker {
   /// Aynı görevdeki sıra numarası (İşçi 1, İşçi 2...).
   final int number;
 
-  /// 0 = Çırak ... [GameConfig.crewRanks] uzunluğu - 1 = Şef.
+  /// Görevin [CrewRoleConfig.ranks] listesindeki basamak (0 = en alt).
   final int rank;
   final String? name;
   final int hiredAtMs;
@@ -28,19 +29,38 @@ class Worker {
 
   CrewRoleConfig get role => GameConfig.crewRole(roleId);
 
-  String get rankTitle => GameConfig.crewRanks[rank.clamp(0, GameConfig.crewRanks.length - 1)];
+  /// Sahadaki unvanı (ör. "Başsondör").
+  String get rankTitle => role.ranks[rank.clamp(0, role.maxRank)];
 
-  bool get isMaxRank => rank >= GameConfig.crewRanks.length - 1;
+  /// Bir üst unvan (en üstteyse null).
+  String? get nextRankTitle => isMaxRank ? null : role.ranks[rank + 1];
 
-  /// Görüntülenen ad: verilen isim ya da görev adı (+ numara).
+  bool get isMaxRank => rank >= role.maxRank;
+
+  /// Görüntülenen ad.
   String get displayName {
     final n = name?.trim();
     if (n != null && n.isNotEmpty) return n;
-    return role.maxCount > 1 ? '${role.title} $number' : role.title;
+    return defaultName(id);
   }
 
-  /// "Derikmen · Kalfa" gibi alt başlık.
-  String get subtitle => '${role.title} · $rankTitle';
+  /// "Şeyhmus · Başsondör" gibi tam künye.
+  String get fullTitle => '$displayName · $rankTitle';
+
+  /// Kimliğe göre deterministik varsayılan ad (eski kayıtlar için yedek).
+  static String defaultName(int id) => GameConfig.crewNames[(id * 7) % GameConfig.crewNames.length];
+
+  /// Ekipte kullanılmayan bir ad seçer.
+  static String pickName(int id, Iterable<String> used) {
+    final names = GameConfig.crewNames;
+    final taken = used.toSet();
+    final start = (id * 7) % names.length;
+    for (var i = 0; i < names.length; i++) {
+      final n = names[(start + i) % names.length];
+      if (!taken.contains(n)) return n;
+    }
+    return '${names[start]} ${id ~/ names.length + 1}';
+  }
 
   Worker copyWith({int? rank, String? name, bool clearName = false}) => Worker(
     id: id,
@@ -64,7 +84,7 @@ class Worker {
     id: (j['id'] as num?)?.toInt() ?? 0,
     roleId: j['r'] as String? ?? 'isci',
     number: (j['n'] as num?)?.toInt() ?? 1,
-    rank: ((j['k'] as num?)?.toInt() ?? 0).clamp(0, GameConfig.crewRanks.length - 1),
+    rank: ((j['k'] as num?)?.toInt() ?? 0).clamp(0, GameConfig.crewRole(j['r'] as String? ?? 'isci').maxRank),
     name: j['nm'] as String?,
     hiredAtMs: (j['h'] as num?)?.toInt() ?? 0,
   );

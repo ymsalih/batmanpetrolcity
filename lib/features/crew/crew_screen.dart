@@ -70,9 +70,9 @@ class _CrewSummary extends ConsumerWidget {
     String pct(double v) => '%${Fmt.decimal(v * 100, 0)}';
     final chips = <(IconData, String)>[
       if (crew.productionMultiplier > 1) (Icons.trending_up, 'Üretim +${pct(crew.productionMultiplier - 1)}'),
-      if (crew.drillTimeMultiplier < 1) (Icons.timer, 'Sondaj -${pct(1 - crew.drillTimeMultiplier)}'),
+      if (crew.drillTimeMultiplier < 1) (Icons.timer, 'Sondaj \u2212${pct(1 - crew.drillTimeMultiplier)}'),
       if (crew.tapMultiplier > 1) (Icons.touch_app, 'Dokunuş +${pct(crew.tapMultiplier - 1)}'),
-      if (crew.dryMultiplier < 1) (Icons.water_drop, 'Kuru kuyu -${pct(1 - crew.dryMultiplier)}'),
+      if (crew.dryMultiplier < 1) (Icons.water_drop, 'Kuru kuyu \u2212${pct(1 - crew.dryMultiplier)}'),
       if (crew.priceMultiplier > 1) (Icons.sell, 'Fiyat +${pct(crew.priceMultiplier - 1)}'),
       if (crew.autoRepairSeconds != null) (Icons.build, 'Oto tamir ${Fmt.integer(crew.autoRepairSeconds!)} sn'),
       if (crew.autoCollectSeconds != null)
@@ -97,8 +97,9 @@ class _CrewSummary extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Her işçinin bir görevi ve rütbesi var. Terfi ettikçe işini daha iyi yapar. '
-            'Avatara dokun, konuşsun; kaleme dokun, adını sen koy.',
+            'Her işçinin bir adı, görevi ve sahadaki gerçek unvanı var: Masa İşçisi, Derikmen, '
+            'Sondör, Başsondör... Terfi ettikçe işini daha iyi yapar, konuşması da değişir. '
+            'Avatara dokun konuşsun; kaleme dokun, adını sen koy.',
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
           if (chips.isNotEmpty) ...[
@@ -179,24 +180,13 @@ class _WorkerCard extends ConsumerWidget {
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            role.title,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Color(role.helmetColor).withValues(alpha: 0.95),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _RankBadge(rank: w.rank),
-                      ],
-                    ),
+                    // Unvan (rütbe) rozeti: yıldız sayısı kademeyi gösterir.
+                    _RankBadge(title: w.rankTitle, rank: w.rank),
                     const SizedBox(height: 4),
-                    Text(Crew.effectText(role, w.rank), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    Text(
+                      '${role.title} hattı · ${Crew.effectText(role, w.rank)}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
                   ],
                 ),
               ),
@@ -212,8 +202,8 @@ class _WorkerCard extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           if (w.isMaxRank)
-            const Text(
-              'En yüksek rütbede: Şef',
+            Text(
+              'En yüksek unvanda: ${w.rankTitle}',
               style: TextStyle(color: Palette.gold, fontWeight: FontWeight.w800),
             )
           else
@@ -224,7 +214,7 @@ class _WorkerCard extends ConsumerWidget {
               foreground: const Color(0xFF3A2508),
               shine: money >= cost,
               icon: Icons.military_tech,
-              label: '${GameConfig.crewRanks[w.rank + 1]} yap · ${Fmt.money(cost)}',
+              label: '${w.nextRankTitle} yap · ${Fmt.money(cost)}',
               onPressed: money >= cost
                   ? () {
                       final r = ref.read(gameControllerProvider.notifier).promote(w.id);
@@ -255,7 +245,7 @@ class _WorkerCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${w.role.title} · ${w.rankTitle}', style: const TextStyle(color: Colors.white60)),
+            Text('${w.rankTitle} · ${w.role.title} hattı', style: const TextStyle(color: Colors.white60)),
             const SizedBox(height: 10),
             TextField(
               controller: controller,
@@ -263,7 +253,8 @@ class _WorkerCard extends ConsumerWidget {
               maxLength: Worker.maxNameLength,
               textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
-                hintText: w.role.maxCount > 1 ? '${w.role.title} ${w.number}' : w.role.title,
+                hintText: w.displayName,
+                helperText: 'İleride kullanıcı adınla eşleşebilir',
                 border: const OutlineInputBorder(),
               ),
               onSubmitted: (v) => Navigator.pop(ctx, v),
@@ -271,7 +262,7 @@ class _WorkerCard extends ConsumerWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, ''), child: const Text('Görev adına dön')),
+          TextButton(onPressed: () => Navigator.pop(ctx, ''), child: const Text('Rastgele ad')),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
           TextButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Kaydet')),
         ],
@@ -283,7 +274,8 @@ class _WorkerCard extends ConsumerWidget {
 }
 
 class _RankBadge extends StatelessWidget {
-  const _RankBadge({required this.rank});
+  const _RankBadge({required this.title, required this.rank});
+  final String title;
   final int rank;
 
   @override
@@ -300,7 +292,7 @@ class _RankBadge extends StatelessWidget {
           for (var i = 0; i <= rank; i++) const Icon(Icons.star, size: 10, color: Color(0xFF3A2508)),
           const SizedBox(width: 4),
           Text(
-            GameConfig.crewRanks[rank],
+            title,
             style: const TextStyle(color: Color(0xFF3A2508), fontWeight: FontWeight.w900, fontSize: 11),
           ),
         ],
@@ -360,9 +352,12 @@ class _HireCard extends ConsumerWidget {
                 Text(role.description, style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
                 const SizedBox(height: 2),
                 Text(
-                  'Çırak: ${Crew.effectText(role, 0)}',
+                  '${role.ranks.first}: ${Crew.effectText(role, 0)}',
                   style: const TextStyle(color: Palette.success, fontSize: 12, fontWeight: FontWeight.w700),
                 ),
+                const SizedBox(height: 4),
+                // Gerçek kariyer basamakları
+                Text(role.ranks.join(' → '), style: const TextStyle(color: Colors.white38, fontSize: 11, height: 1.3)),
               ],
             ),
           ),

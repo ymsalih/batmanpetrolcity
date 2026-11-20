@@ -41,7 +41,7 @@ abstract final class UstaLines {
 
   static const storageFull = ['Depo ağzına kadar doldu, topla hele!'];
 
-  static const unlock = ['Yeni saha hayırlı olsun ağam!', 'Bak sen, iş büyüyor! Hayırlı uğurlu olsun.'];
+  static const unlock = ['Yeni saha hayırlı olsun {ağa}!', 'Bak sen, iş büyüyor! Hayırlı uğurlu olsun.'];
 
   static const sold = ['Para cebe girdi, Allah bereket versin!', 'İyi sattın bıra, ticaret senin işin.'];
 
