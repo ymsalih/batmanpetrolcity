@@ -37,35 +37,43 @@ class MarketScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text('Ham petrol', style: TextStyle(color: Colors.white70)),
-                  const Spacer(),
-                  Text(
-                    'Sonraki değişim ${Fmt.clock(nextChange)}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Sonraki değişim ${Fmt.clock(nextChange)}',
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    Fmt.price(s.oilPrice),
-                    key: const Key('oil_price'),
-                    style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white),
-                  ),
-                  const Text(' /varil', style: TextStyle(color: Colors.white54)),
-                  const SizedBox(width: 10),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      '${change >= 0 ? '▲' : '▼'} %${Fmt.decimal(change.abs(), 1)}',
-                      style: TextStyle(
-                        color: change >= 0 ? Palette.success : Palette.danger,
-                        fontWeight: FontWeight.w800,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      Fmt.price(s.oilPrice),
+                      key: const Key('oil_price'),
+                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                    const Text(' /varil', style: TextStyle(color: Colors.white54)),
+                    const SizedBox(width: 10),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        '${change >= 0 ? '▲' : '▼'} %${Fmt.decimal(change.abs(), 1)}',
+                        style: TextStyle(
+                          color: change >= 0 ? Palette.success : Palette.danger,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (priceMult != 1)
                 Container(
@@ -190,9 +198,20 @@ class _SellCard extends ConsumerWidget {
             children: [
               Icon(icon, color: Palette.sunsetLight),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const Spacer(),
-              Text('Stok: ${Fmt.compact(whole)} $unitLabel', style: const TextStyle(color: Colors.white70)),
+              Expanded(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+              ),
+              Flexible(
+                child: Text(
+                  'Stok: ${Fmt.compact(whole)} $unitLabel',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),

@@ -90,33 +90,47 @@ class _TutorialOverlayState extends ConsumerState<TutorialOverlay> {
     return Container(
       color: Colors.black.withValues(alpha: 0.45),
       alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-      child: UstaSpeech(
-        key: ValueKey(stepIndex),
-        text: step.text,
-        mood: step.mood,
-        avatarSize: 84,
-        footer: Row(
-          children: [
-            Text(
-              '${stepIndex + 1} / ${tutorialSteps.length}',
-              style: const TextStyle(color: Palette.earth, fontWeight: FontWeight.w700),
-            ),
-            const Spacer(),
-            if (!last)
-              TextButton(
-                onPressed: _skip,
-                child: const Text('Geç', style: TextStyle(color: Palette.earth)),
+      // Uzun metin/küçük ekranda kart kaydırılabilir kalır.
+      child: SingleChildScrollView(
+        reverse: true,
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+        child: UstaSpeech(
+          key: ValueKey(stepIndex),
+          text: step.text,
+          mood: step.mood,
+          avatarSize: 84,
+          footer: Row(
+            children: [
+              Text(
+                '${stepIndex + 1} / ${tutorialSteps.length}',
+                style: const TextStyle(color: Palette.earth, fontWeight: FontWeight.w700),
               ),
-            FilledButton(
-              key: const Key('tutorial_next'),
-              style: FilledButton.styleFrom(backgroundColor: Palette.sunset),
-              onPressed: _next,
-              child: Text(last ? 'Başlayalım!' : 'Devam'),
-            ),
-          ],
-        ),
-      ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.2, end: 0),
+              const SizedBox(width: 8),
+              // Dar ekranlarda butonlar alt satıra kayar.
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    if (!last)
+                      TextButton(
+                        onPressed: _skip,
+                        child: const Text('Geç', style: TextStyle(color: Palette.earth)),
+                      ),
+                    FilledButton(
+                      key: const Key('tutorial_next'),
+                      style: FilledButton.styleFrom(backgroundColor: Palette.sunset),
+                      onPressed: _next,
+                      child: Text(last ? 'Başlayalım!' : 'Devam'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.2, end: 0),
+      ),
     );
   }
 }

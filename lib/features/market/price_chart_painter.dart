@@ -30,10 +30,10 @@ class PriceChartPainter extends CustomPainter {
     final grid = Paint()
       ..color = Colors.white12
       ..strokeWidth = 1;
-    for (var i = 0; i <= 3; i++) {
-      final y = chart.top + chart.height * i / 3;
+    for (var i = 0; i <= 4; i++) {
+      final y = chart.top + chart.height * i / 4;
       canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), grid);
-      final v = hi - range * i / 3;
+      final v = hi - range * i / 4;
       final tp = TextPainter(
         text: TextSpan(
           text: Fmt.decimal(v, 0),

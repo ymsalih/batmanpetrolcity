@@ -174,7 +174,11 @@ class _CollectAllButton extends ConsumerWidget {
       builder: (ctx) {
         return FilledButton.icon(
           key: const Key('collect_all'),
-          style: FilledButton.styleFrom(backgroundColor: Palette.oilSheen, minimumSize: const Size(240, 46)),
+          style: FilledButton.styleFrom(
+            backgroundColor: Palette.oilSheen,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(240, 46),
+          ),
           icon: const Icon(Icons.oil_barrel, color: Palette.gold),
           label: Text('Tüm kuyuları topla (${Fmt.compact(total)})'),
           onPressed: total < 1

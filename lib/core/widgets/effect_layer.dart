@@ -51,6 +51,7 @@ class EffectLayerState extends State<EffectLayer> {
                       color: color,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
+                      decoration: TextDecoration.none,
                       shadows: const [Shadow(blurRadius: 4, color: Colors.black)],
                     ),
                   )

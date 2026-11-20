@@ -1,11 +1,11 @@
 {
-    "name": "batman_petrol_agasi",
-    "short_name": "batman_petrol_agasi",
+    "name": "Batman Petrol Ağası",
+    "short_name": "Petrol Ağası",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#14110F",
+    "theme_color": "#F07A2A",
+    "description": "Batman'ın petrol kimliğini konu alan idle/tycoon oyunu.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
