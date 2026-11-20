@@ -10,6 +10,7 @@ import 'core/ui/premium.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
 import 'core/widgets/hud.dart';
+import 'features/chat/chat_director.dart';
 import 'features/crew/crew_screen.dart';
 import 'features/events/effects_bar.dart';
 import 'features/events/offline_dialog.dart';
@@ -105,7 +106,11 @@ class _GameShellState extends ConsumerState<GameShell> {
         _syncAmbient();
       },
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAmbient());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncAmbient();
+      // Saha grubu yönetmenini başlat (sahneleri kendiliğinden açar).
+      ref.read(chatDirectorProvider);
+    });
   }
 
   void _toBackground() {

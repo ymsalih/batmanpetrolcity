@@ -24,7 +24,7 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 // ------------------------------------------------------------------ Ses
 
-enum SoundCue { tap, drillStart, drillTap, gusher, dryWell, collect, sell, upgrade, unlock, event, repair }
+enum SoundCue { tap, drillStart, drillTap, gusher, dryWell, collect, sell, upgrade, unlock, event, repair, message }
 
 /// Ses efektleri için arayüz. Gerçek uygulama: SynthAudioService (kodla
 /// üretilen sesler). Testlerde ve sessiz modda [SilentAudioService].

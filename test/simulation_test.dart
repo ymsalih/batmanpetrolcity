@@ -27,7 +27,8 @@ void main() {
     final p = r.state.site('raman').parcels[0];
     expect(p.status, ParcelStatus.producing);
     // Tamamlandıktan sonraki 10 sn üretim.
-    expect(p.stored, closeTo(10 * raman.baseBarrelsPerSecond, 1e-6));
+    // Başlangıç morali üretime küçük bir katkı verir.
+    expect(p.stored, closeTo(10 * raman.baseBarrelsPerSecond * s.moraleMultiplier, 1e-6));
     expect(r.events.whereType<DrillFinished>().single.struck, isTrue);
   });
 
@@ -97,5 +98,15 @@ void main() {
     expect(p.pumpLevel, 3);
     expect(p.stored, 12.5);
     expect(restored.sites.length, GameConfig.sites.length);
+  });
+
+  test('moral üretimi etkiler ve zamanla dinlenme değerine döner', () {
+    final base = withParcel(const Parcel(status: ParcelStatus.producing));
+    final happy = Simulation.advance(base.copyWith(morale: 100), t0 + 10000, Random(1), allowRandomEvents: false);
+    final sad = Simulation.advance(base.copyWith(morale: 0), t0 + 10000, Random(1), allowRandomEvents: false);
+    expect(happy.produced / sad.produced, closeTo(1.05 / 0.95, 1e-3));
+    final later = Simulation.advance(base.copyWith(morale: 100), t0 + 3600 * 1000, Random(1), allowRandomEvents: false);
+    expect(later.state.morale, lessThan(100));
+    expect(later.state.morale, greaterThan(GameConfig.moraleRest));
   });
 }

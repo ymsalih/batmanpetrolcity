@@ -26,7 +26,8 @@ abstract final class Simulation {
 
     final events = <GameEvent>[];
     final crew = s.crew;
-    final prodMult = _effectiveProductionMultiplier(s.effects, fromMs, nowMs) * crew.productionMultiplier;
+    final prodMult =
+        _effectiveProductionMultiplier(s.effects, fromMs, nowMs) * crew.productionMultiplier * s.moraleMultiplier;
     final collectMs = crew.autoCollectSeconds == null ? null : (crew.autoCollectSeconds! * 1000).round();
     final repairMs = crew.autoRepairSeconds == null ? null : (crew.autoRepairSeconds! * 1000).round();
     var produced = 0.0;
@@ -148,7 +149,13 @@ abstract final class Simulation {
       events.add(PriceChanged(old, price));
     }
 
+    // Moral zamanla dinlenme değerine yavaşça döner.
+    final hours = (nowMs - fromMs) / 3600000;
+    final drift = min(1.0, hours * GameConfig.moraleDriftPerHour);
+    final morale = s.morale + (GameConfig.moraleRest - s.morale) * drift;
+
     var next = s.copyWith(
+      morale: morale,
       sites: sites,
       crude: crude,
       nextAutoCollectMs: nextCollect,

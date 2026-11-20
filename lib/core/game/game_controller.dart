@@ -7,6 +7,7 @@ import '../../config/game_config.dart';
 import '../economy/crew.dart';
 import '../economy/economy.dart';
 import '../models/active_effect.dart';
+import '../models/chat.dart';
 import '../models/game_state.dart';
 import '../models/parcel.dart';
 import '../models/worker.dart';
@@ -326,6 +327,62 @@ class GameController extends Notifier<GameState> {
 
   void _replaceWorker(Worker w) {
     state = state.copyWith(workers: [for (final x in state.workers) x.id == w.id ? w : x]);
+  }
+
+  // ---------------------------------------------------------- Sohbet
+
+  /// Saha grubuna mesaj ekler. [unread] true ise okunmamış sayısı artar.
+  void addChat({
+    required ChatSpeaker speaker,
+    required String text,
+    int? workerId,
+    String? name,
+    String? title,
+    bool unread = true,
+  }) {
+    final msg = ChatMessage(
+      id: state.nextChatId,
+      speaker: speaker,
+      text: text,
+      timeMs: now,
+      workerId: workerId,
+      name: name,
+      title: title,
+    );
+    var list = [...state.chat, msg];
+    if (list.length > GameConfig.chatHistoryLimit) list = list.sublist(list.length - GameConfig.chatHistoryLimit);
+    state = state.copyWith(
+      chat: list,
+      nextChatId: state.nextChatId + 1,
+      chatUnread: unread && speaker != ChatSpeaker.player ? state.chatUnread + 1 : state.chatUnread,
+    );
+  }
+
+  void markChatRead() {
+    if (state.chatUnread != 0) state = state.copyWith(chatUnread: 0);
+  }
+
+  void setPendingChoice(PendingChoice? c) =>
+      state = c == null ? state.copyWith(clearPendingChoice: true) : state.copyWith(pendingChoice: c);
+
+  /// Moralü değiştirir (0..100).
+  void adjustMorale(double delta) => state = state.copyWith(morale: (state.morale + delta).clamp(0.0, 100.0));
+
+  /// Bedelli seçenekler için: para yetmiyorsa false.
+  bool spend(double cost) => cost <= 0 || _spend(cost);
+
+  bool get teaReady => now - state.lastTeaMs >= GameConfig.teaCooldownSeconds * 1000;
+
+  Duration get teaCooldown =>
+      Duration(milliseconds: (state.lastTeaMs + GameConfig.teaCooldownSeconds * 1000 - now).clamp(0, 1 << 31));
+
+  /// Ekibe çay ısmarlar: moral artar.
+  ActionResult buyTea() {
+    if (!teaReady) return ActionResult.invalid;
+    if (!_spend(GameConfig.teaCost)) return ActionResult.notEnoughMoney;
+    state = state.copyWith(lastTeaMs: now);
+    adjustMorale(GameConfig.teaMorale);
+    return ActionResult.ok;
   }
 
   // ------------------------------------------------------- Etkiler

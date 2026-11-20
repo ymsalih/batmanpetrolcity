@@ -96,6 +96,17 @@ abstract final class Synth {
           final lt = t % 0.18;
           return sin(2 * pi * f * t) * 0.4 * (lt < 0.14 ? 1 : 0) * min(1.0, lt * 200);
         });
+      case SoundCue.message:
+        // Yumuşak bildirim: iki kısa, yükselen nota.
+        return _render(0.28, (t) {
+          double note(double st, double f) {
+            if (t < st) return 0;
+            final lt = t - st;
+            return sin(2 * pi * f * lt) * exp(-lt * 22) * min(1.0, lt * 400);
+          }
+
+          return (note(0, 880) + note(0.09, 1318.5)) * 0.45;
+        });
       case SoundCue.repair:
         // Metal tıngırtısı: uyumsuz kısmi frekanslar.
         return _render(0.5, (t) {

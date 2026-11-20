@@ -82,6 +82,18 @@ Unvan kaynakları: [Rigzone: Toolpusher kariyer yolu](https://www.rigzone.com/in
 [Sondaj Terimleri (sondajcılar)](https://sondajcilar.wordpress.com/2012/03/28/sondaj-terimleri/), [Sondaj Bilgisi ders notu](http://www.kursatozcan.com/ders_notlari/sondaj_teknigi/turhan_ayyildiz_sondaj_bilgisi.pdf),
 [TPAO işçi alım ilanı (Kule İşçisi/Derikmen)](https://ilan.memurlar.net/ilan/6082/tpao-isci-alim-ilani.html).
 
+## Saha Grubu (sohbet) ve moral
+
+HUD'daki sohbet ikonundan açılan **Saha Grubu**, Usta ve ekibin yazıştığı bir grup sohbetidir.
+
+- **Sahneler** (`features/chat/scenes.dart`): 25'ten fazla çok turlu sohbet. Gündelik sahneler arasında çay molası, sondörle derikmenin hız tartışması, Usta'nın 1940 Raman hikâyesi, Batman Petrolspor maçı, kaburga dolmalı akşam yemeği, Hasankeyf izni, yeni gelene takılan kıdemliler, jeoloji dersi ve emniyet toplantısı var. Petrol bulma, kuru kuyu, terfi, işe alım, sıcak, fiyat ve arıza olaylarında da tetiklenen sahneler var.
+- **Cevap seçenekleri:** Bazı sahnelerde oyuncu cevap seçer. Seçimler **morali** değiştirir; bazıları para ister (ör. "Herkese baklava benden!").
+- **Moral** (0–100): Üretimi en fazla ±%5 etkiler ve zamanla 60'a döner. Çay ısmarlamak moral verir (5 dakika bekleme).
+- **Birebir sohbet:** Ekip kartındaki baloncuk ikonundan açılır. Konular: Nasılsın, İş nasıl, Memleket nere, Tavsiye ver, Hikâye anlat. Cevaplar görev, rütbe kademesi ve morale göre değişir; tavsiyeler gerçek oyun ipuçlarıdır.
+- **Görünüm:** "… yazıyor" göstergesi, okunmamış rozeti, bildirim sesi, unvanlı isimler, saat damgaları.
+- Sohbet ekranı kapalıyken sahnenin ilk mesajı kısa bir balon olarak görünür. Olay replikleri de geçmişe kaydedilir.
+- Geçmiş (en fazla 120 mesaj), moral ve bekleyen soru kayıtla birlikte saklanır.
+
 ## Mobil öncelik
 
 - Dikey ekran kilidi, kenardan kenara çizim, şeffaf durum çubuğu (Android/iOS); web manifest'te `portrait-primary`.
@@ -192,4 +204,6 @@ Harita işaretçisi, saha ekranı, kayıt ve ekonomi yeni sahayı otomatik olara
 - `test/simulation_test.dart`: sondaj sonucu, Batman sıcağı, arıza, 4 saat sınırı, fiyat geçmişi, kayıt gidiş-dönüş
 - `test/game_controller_test.dart`: bakiye kontrolü, dokunuş sınırı, topla → sat → kaydet → yükle, rafineri, tamir, çevrimdışı rapor
 - `test/widget_smoke_test.dart`: uygulama açılışı ve 5 adımlık rehber
+- `test/chat_test.dart`: sahne içeriği doğrulaması, sahne akışı, seçim/moral/para, birebir sohbet, çay, kayıt
+- `test/crew_test.dart`: unvanlar, adlar, ekip etkileri, terfi, replik kademeleri
 - `test/painters_test.dart`: tüm painter'lar istisnasız çizer, animasyonlar kare kare çalışır, at kafası mekanizması tüm turda çözülür

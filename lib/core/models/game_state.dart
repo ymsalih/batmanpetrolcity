@@ -1,6 +1,7 @@
 import '../../config/game_config.dart';
 import '../economy/crew.dart';
 import 'active_effect.dart';
+import 'chat.dart';
 import 'parcel.dart';
 import 'site_state.dart';
 import 'worker.dart';
@@ -68,6 +69,12 @@ class GameState {
     this.nextAutoCollectMs = 0,
     this.lowGraphics = false,
     this.playerName,
+    this.chat = const [],
+    this.chatUnread = 0,
+    this.nextChatId = 1,
+    this.morale = GameConfig.moraleStart,
+    this.pendingChoice,
+    this.lastTeaMs = 0,
     this.offlineReport,
   });
 
@@ -120,6 +127,33 @@ class GameState {
 
   /// Oyuncunun adı (ileride kullanıcı adı). İşçiler bu adla hitap eder.
   final String? playerName;
+
+  /// Saha grubu sohbet geçmişi (en yeni sonda).
+  final List<ChatMessage> chat;
+  final int chatUnread;
+  final int nextChatId;
+
+  /// Ekip morali (0..100).
+  final double morale;
+
+  /// Oyuncunun cevabını bekleyen sahne.
+  final PendingChoice? pendingChoice;
+  final int lastTeaMs;
+
+  /// Moralin üretime etkisi (ör. 70 → 1.02).
+  double get moraleMultiplier =>
+      1 +
+      ((morale - GameConfig.moraleNeutral) / GameConfig.moraleNeutral).clamp(-1.0, 1.0) * GameConfig.moraleMaxEffect;
+
+  String get moraleLabel => morale >= 85
+      ? 'Coşkulu'
+      : morale >= 65
+      ? 'Keyifli'
+      : morale >= 45
+      ? 'Normal'
+      : morale >= 25
+      ? 'Yorgun'
+      : 'Küskün';
 
   /// Hitap: "Hamit Ağa" ya da ad yoksa "ağam".
   String get address => (playerName == null || playerName!.isEmpty) ? 'ağam' : '$playerName Ağa';
@@ -185,6 +219,13 @@ class GameState {
     bool? lowGraphics,
     String? playerName,
     bool clearPlayerName = false,
+    List<ChatMessage>? chat,
+    int? chatUnread,
+    int? nextChatId,
+    double? morale,
+    PendingChoice? pendingChoice,
+    bool clearPendingChoice = false,
+    int? lastTeaMs,
     OfflineReport? offlineReport,
     bool clearOfflineReport = false,
   }) {
@@ -210,6 +251,12 @@ class GameState {
       nextAutoCollectMs: nextAutoCollectMs ?? this.nextAutoCollectMs,
       lowGraphics: lowGraphics ?? this.lowGraphics,
       playerName: clearPlayerName ? null : (playerName ?? this.playerName),
+      chat: chat ?? this.chat,
+      chatUnread: chatUnread ?? this.chatUnread,
+      nextChatId: nextChatId ?? this.nextChatId,
+      morale: morale ?? this.morale,
+      pendingChoice: clearPendingChoice ? null : (pendingChoice ?? this.pendingChoice),
+      lastTeaMs: lastTeaMs ?? this.lastTeaMs,
       offlineReport: clearOfflineReport ? null : (offlineReport ?? this.offlineReport),
     );
   }
@@ -237,6 +284,12 @@ class GameState {
     'nac': nextAutoCollectMs,
     'lg': lowGraphics,
     if (playerName != null) 'pn': playerName,
+    'ch': chat.map((m) => m.toJson()).toList(),
+    'cu': chatUnread,
+    'nc': nextChatId,
+    'mo': morale,
+    if (pendingChoice != null) 'pc': pendingChoice!.toJson(),
+    'tea': lastTeaMs,
   };
 
   /// Eski kayıtlar ve config'e sonradan eklenen sahalar için toleranslı okuma.
@@ -277,6 +330,14 @@ class GameState {
       nextAutoCollectMs: (j['nac'] as num?)?.toInt() ?? 0,
       lowGraphics: j['lg'] as bool? ?? false,
       playerName: j['pn'] as String?,
+      chat: ((j['ch'] as List?) ?? const [])
+          .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      chatUnread: (j['cu'] as num?)?.toInt() ?? 0,
+      nextChatId: (j['nc'] as num?)?.toInt() ?? 1,
+      morale: ((j['mo'] as num?)?.toDouble() ?? GameConfig.moraleStart).clamp(0.0, 100.0),
+      pendingChoice: j['pc'] is Map ? PendingChoice.fromJson(Map<String, dynamic>.from(j['pc'] as Map)) : null,
+      lastTeaMs: (j['tea'] as num?)?.toInt() ?? 0,
     );
   }
 }

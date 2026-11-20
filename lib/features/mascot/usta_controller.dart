@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/game_config.dart';
 import '../../core/game/game_controller.dart';
 import '../../core/game/game_events.dart';
+import '../../core/models/chat.dart';
 import '../../core/models/worker.dart';
 import '../crew/crew_lines.dart';
 import 'usta_lines.dart';
@@ -49,6 +50,7 @@ class UstaController extends Notifier<UstaMessage?> {
     UstaMood mood = UstaMood.happy,
     Duration duration = const Duration(seconds: 4),
     int? workerId,
+    bool log = true,
   }) {
     _hide?.cancel();
     final game = ref.read(gameControllerProvider);
@@ -56,6 +58,20 @@ class UstaController extends Notifier<UstaMessage?> {
     final filled = CrewLines.fill(text, address: game.address, worker: worker);
     state = UstaMessage(filled, mood, _seq++, workerId: workerId);
     _hide = Timer(duration, dismiss);
+    // Olay replikleri saha grubunun geçmişine de düşer (balonda görüldüğü
+    // için okunmamış sayılmaz).
+    if (log && game.tutorialDone) {
+      ref
+          .read(gameControllerProvider.notifier)
+          .addChat(
+            speaker: worker == null ? ChatSpeaker.usta : ChatSpeaker.worker,
+            text: filled,
+            workerId: worker?.id,
+            name: worker?.displayName ?? 'Usta',
+            title: worker?.rankTitle,
+            unread: false,
+          );
+    }
   }
 
   void dismiss() {

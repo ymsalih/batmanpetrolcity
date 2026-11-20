@@ -27,6 +27,7 @@ class SynthAudioService implements AudioService {
     SoundCue.unlock: 0.5,
     SoundCue.event: 0.45,
     SoundCue.repair: 0.45,
+    SoundCue.message: 0.35,
   };
 
   final _pools = <SoundCue, List<AudioPlayer>>{};

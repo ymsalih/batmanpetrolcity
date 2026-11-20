@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
+import '../../features/chat/chat_screen.dart';
 import '../../features/mascot/usta_avatar.dart';
 import '../../features/mascot/usta_controller.dart';
 import '../game/game_controller.dart';
@@ -55,6 +56,8 @@ class GameHud extends ConsumerWidget {
               ),
             ],
             const SizedBox(width: 6),
+            const _ChatButton(),
+            const SizedBox(width: 6),
             GestureDetector(
               onTap: () => ref.read(ustaProvider.notifier).tip(),
               child: Container(
@@ -68,6 +71,68 @@ class GameHud extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Saha grubuna giriş: okunmamış mesaj rozeti ve bekleyen soru işareti.
+class _ChatButton extends ConsumerWidget {
+  const _ChatButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(gameControllerProvider.select((s) => s.chatUnread));
+    final pending = ref.watch(gameControllerProvider.select((s) => s.pendingChoice != null));
+    return Semantics(
+      button: true,
+      label: 'Saha grubu, $unread okunmamış mesaj',
+      child: GestureDetector(
+        key: const Key('hud_chat'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).push(premiumRoute(const ChatScreen())),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.3),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                ),
+                child: const Icon(Icons.forum_rounded, color: Colors.white, size: 21),
+              ),
+              if (unread > 0 || pending)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child:
+                      Container(
+                            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: Premium.danger),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Palette.panel, width: 2),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              pending && unread == 0 ? '?' : (unread > 9 ? '9+' : '$unread'),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          )
+                          .animate(key: ValueKey(unread))
+                          .scale(begin: const Offset(0.5, 0.5), duration: 250.ms, curve: Curves.easeOutBack),
+                ),
+            ],
+          ),
         ),
       ),
     );

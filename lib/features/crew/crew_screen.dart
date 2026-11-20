@@ -15,6 +15,7 @@ import '../../core/utils/format.dart';
 import '../../core/visuals/game_visuals.dart';
 import '../mascot/usta_bubble.dart';
 import '../mascot/usta_controller.dart';
+import '../chat/chat_screen.dart';
 import 'worker_avatar.dart';
 
 /// Ekip ekranı: işçiler, görevleri, rütbeleri; işe alma ve terfi.
@@ -67,8 +68,11 @@ class _CrewSummary extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final crew = ref.watch(gameControllerProvider.select((s) => s.crew));
     final count = ref.watch(gameControllerProvider.select((s) => s.workers.length));
+    final morale = ref.watch(gameControllerProvider.select((s) => s.morale));
+    final moraleLabel = ref.watch(gameControllerProvider.select((s) => s.moraleLabel));
     String pct(double v) => '%${Fmt.decimal(v * 100, 0)}';
     final chips = <(IconData, String)>[
+      (Icons.mood, 'Moral: $moraleLabel (${morale.round()})'),
       if (crew.productionMultiplier > 1) (Icons.trending_up, 'Üretim +${pct(crew.productionMultiplier - 1)}'),
       if (crew.drillTimeMultiplier < 1) (Icons.timer, 'Sondaj \u2212${pct(1 - crew.drillTimeMultiplier)}'),
       if (crew.tapMultiplier > 1) (Icons.touch_app, 'Dokunuş +${pct(crew.tapMultiplier - 1)}'),
@@ -189,6 +193,14 @@ class _WorkerCard extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              // Birebir sohbet
+              IconButton(
+                key: Key('worker_chat_${w.id}'),
+                tooltip: 'Sohbet et',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const Icon(Icons.chat_bubble_outline, color: Palette.sunsetLight, size: 21),
+                onPressed: () => showPersonalChat(context, w),
               ),
               // İsim ver (48dp dokunma alanı)
               IconButton(

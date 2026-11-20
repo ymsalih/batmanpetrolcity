@@ -541,6 +541,30 @@ abstract final class GameConfig {
     ),
   ];
 
+  // -------------------------------------------------------- Sohbet & Moral
+  /// Ekip morali 0..100. 50 nötrdür; üretimi en fazla ±[moraleMaxEffect] değiştirir.
+  static const double moraleStart = 70;
+  static const double moraleNeutral = 50;
+  static const double moraleMaxEffect = 0.05;
+
+  /// Moral zamanla bu değere doğru yavaşça döner.
+  static const double moraleRest = 60;
+
+  /// Moralin [moraleRest]'e dönüş hızı (saatte yolun oranı).
+  static const double moraleDriftPerHour = 0.5;
+
+  /// Saha grubunda kendiliğinden başlayan sohbetler arası süre (sn).
+  static const int chatSceneMinGapSeconds = 55;
+  static const int chatSceneMaxGapSeconds = 120;
+
+  /// Sohbet geçmişinde saklanan en fazla mesaj.
+  static const int chatHistoryLimit = 120;
+
+  /// Çay ısmarlamanın bedeli, moral artışı ve bekleme süresi.
+  static const double teaCost = 150;
+  static const double teaMorale = 8;
+  static const int teaCooldownSeconds = 300;
+
   static CrewRoleConfig crewRole(String id) => crewRoles.firstWhere((r) => r.id == id, orElse: () => crewRoles.last);
 
   static SiteConfig site(String id) => sites.firstWhere((s) => s.id == id, orElse: () => sites.first);
