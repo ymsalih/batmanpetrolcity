@@ -247,7 +247,10 @@ class GameController extends Notifier<GameState> {
 
   ActionResult refine(double barrels) {
     if (!state.refineryUnlocked) return ActionResult.invalid;
-    final amount = min(barrels, state.crude).floorToDouble();
+    // Para yetmiyorsa karşılanabilen kadarını işle.
+    final affordable = (state.money / GameConfig.refineCostPerBarrel).floorToDouble();
+    final amount = min(min(barrels, state.crude), affordable).floorToDouble();
+    if (min(barrels, state.crude) >= 1 && amount < 1) return ActionResult.notEnoughMoney;
     if (amount <= 0) return ActionResult.invalid;
     if (!_spend(Economy.refineCost(amount))) return ActionResult.notEnoughMoney;
     state = state.copyWith(crude: state.crude - amount, refined: state.refined + amount * GameConfig.refinedPerBarrel);
