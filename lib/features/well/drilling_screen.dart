@@ -13,6 +13,7 @@ import '../../core/models/parcel.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
 import '../../core/visuals/landscape.dart';
@@ -103,7 +104,34 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
 
     return Scaffold(
       backgroundColor: Palette.oil,
-      appBar: AppBar(backgroundColor: Palette.panel, title: Text('Sondaj · ${cfg.name} · Parsel ${widget.index + 1}')),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Sondaj · ${cfg.name} · Parsel ${widget.index + 1}',
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            shadows: [Shadow(blurRadius: 6, color: Colors.black54)],
+          ),
+        ),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black.withValues(alpha: 0.55), Colors.black.withValues(alpha: 0.15)],
+                ),
+                border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: finished ? null : _onTap,
@@ -163,6 +191,7 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
                               night: dayNight.night,
                               oilRise: oilRise,
                               oilShader: _oilSlot.of(ref.read(shaderBankProvider).oilSheen),
+                              topInset: MediaQuery.paddingOf(context).top + kToolbarHeight + 6,
                               geoImage: _geology(cfg, Size(box.maxWidth, box.maxHeight), dayNight.night),
                             ),
                           ),
@@ -183,8 +212,8 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
                     ),
                   ),
                   Positioned(
-                    top: 12,
-                    right: 12,
+                    top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+                    left: 10,
                     child: _DepthCounter(
                       depth: depth,
                       target: cfg.targetDepthM,
@@ -225,11 +254,11 @@ class _DepthCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+    return GlassPanel(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('DERİNLİK', style: TextStyle(color: Colors.white60, fontSize: 11, letterSpacing: 1.5)),
           Text(
@@ -237,7 +266,7 @@ class _DepthCounter extends StatelessWidget {
             key: const Key('depth_counter'),
             style: const TextStyle(
               color: Palette.gold,
-              fontSize: 30,
+              fontSize: 26,
               fontWeight: FontWeight.w900,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
@@ -258,9 +287,9 @@ class _DrillStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bonusFraction = parcel.drillDurationMs == 0 ? 0.0 : parcel.drillBonusMs / parcel.drillDurationMs;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.65), borderRadius: BorderRadius.circular(14)),
+    return GlassPanel(
+      radius: 20,
+      padding: const EdgeInsets.all(14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -343,16 +372,16 @@ class _ResultCard extends ConsumerWidget {
               style: const TextStyle(color: Colors.white70),
             ),
           const SizedBox(height: 14),
-          FilledButton.icon(
-            key: const Key('drill_result_ok'),
-            style: FilledButton.styleFrom(
-              backgroundColor: struck ? Palette.sunset : Palette.steel,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(220, 48),
+          SizedBox(
+            width: 250,
+            child: PremiumButton(
+              key: const Key('drill_result_ok'),
+              colors: struck ? Premium.gold : Premium.steel,
+              foreground: struck ? const Color(0xFF3A2508) : Colors.white,
+              icon: struck ? Icons.precision_manufacturing : Icons.arrow_back,
+              label: struck ? 'At kafasını kur' : 'Sahaya dön',
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            icon: Icon(struck ? Icons.precision_manufacturing : Icons.arrow_back),
-            label: Text(struck ? 'At kafasını kur' : 'Sahaya dön'),
-            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),

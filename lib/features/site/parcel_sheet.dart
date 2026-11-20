@@ -9,6 +9,7 @@ import '../../core/models/parcel.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../mascot/usta_controller.dart';
 import '../well/drilling_screen.dart';
 import 'tier_label.dart';
@@ -65,21 +66,23 @@ class ParcelSheet extends ConsumerWidget {
               _surveyInfo(cfg, parcel),
               const SizedBox(height: 16),
               if (!parcel.surveyed)
-                OutlinedButton.icon(
+                PremiumButton(
                   key: const Key('btn_survey'),
-                  icon: const Icon(Icons.search),
-                  label: Text('Etüt yap · ${Fmt.money(cfg.surveyCost)}'),
-                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                  icon: Icons.search,
+                  label: 'Etüt yap · ${Fmt.money(cfg.surveyCost)}',
+                  colors: Premium.steel,
+                  shine: false,
+                  height: 48,
                   onPressed: money >= cfg.surveyCost
                       ? () => handle(ctrl.survey(siteId, index), onOk: () => ref.read(feedbackProvider).light())
                       : null,
                 ),
               const SizedBox(height: 10),
-              FilledButton.icon(
+              PremiumButton(
                 key: const Key('btn_drill'),
-                icon: const Icon(Icons.hardware),
-                label: Text('Sondaja başla · ${Fmt.money(cfg.drillCost)}'),
-                style: FilledButton.styleFrom(backgroundColor: Palette.sunset, minimumSize: const Size.fromHeight(52)),
+                icon: Icons.hardware,
+                label: 'Sondaja başla · ${Fmt.money(cfg.drillCost)}',
+                height: 56,
                 onPressed: () => handle(
                   ctrl.startDrill(siteId, index),
                   onOk: () {
@@ -87,11 +90,7 @@ class ParcelSheet extends ConsumerWidget {
                     ref.read(ustaProvider.notifier).drillStarted();
                     final nav = Navigator.of(context);
                     nav.pop();
-                    nav.push(
-                      MaterialPageRoute(
-                        builder: (_) => DrillingScreen(siteId: siteId, index: index),
-                      ),
-                    );
+                    nav.push(premiumRoute(DrillingScreen(siteId: siteId, index: index)));
                   },
                 ),
               ),
@@ -102,11 +101,11 @@ class ParcelSheet extends ConsumerWidget {
                 style: TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
+              PremiumButton(
                 key: const Key('btn_clear'),
-                icon: const Icon(Icons.cleaning_services),
-                label: Text('Parseli temizle · ${Fmt.money(Economy.clearDryCost(cfg))}'),
-                style: FilledButton.styleFrom(backgroundColor: Palette.steel, minimumSize: const Size.fromHeight(48)),
+                icon: Icons.cleaning_services,
+                label: 'Parseli temizle · ${Fmt.money(Economy.clearDryCost(cfg))}',
+                colors: Premium.steel,
                 onPressed: () => handle(ctrl.clearDry(siteId, index), onOk: () => Navigator.of(context).pop()),
               ),
             ],

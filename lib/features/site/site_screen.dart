@@ -11,6 +11,7 @@ import '../../core/navigation.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
 import '../../core/visuals/shaders.dart';
@@ -42,7 +43,6 @@ class SiteScreen extends ConsumerWidget {
           ),
         ),
         SafeArea(
-          top: false,
           child: Column(
             children: [
               // Saha seçici
@@ -119,7 +119,7 @@ class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProvi
     final dn = widget.dn;
     return LayoutBuilder(
       builder: (context, box) {
-        final band = box.maxHeight * 0.18;
+        final band = box.maxHeight * 0.30;
         return Stack(
           children: [
             Positioned(
@@ -229,28 +229,28 @@ class _CollectAllButton extends ConsumerWidget {
     );
     return Builder(
       builder: (ctx) {
-        return FilledButton.icon(
-          key: const Key('collect_all'),
-          style: FilledButton.styleFrom(
-            backgroundColor: Palette.oilSheen,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(240, 46),
+        return SizedBox(
+          width: 280,
+          child: PremiumButton(
+            key: const Key('collect_all'),
+            colors: Premium.gold,
+            foreground: const Color(0xFF3A2508),
+            icon: Icons.oil_barrel,
+            label: 'Tüm kuyuları topla (${Fmt.compact(total)})',
+            onPressed: total < 1
+                ? null
+                : () {
+                    final amount = ref.read(gameControllerProvider.notifier).collectAll();
+                    ref.read(feedbackProvider).medium(SoundCue.collect);
+                    final box = ctx.findRenderObject() as RenderBox?;
+                    if (box != null) {
+                      final c = box.localToGlobal(box.size.center(Offset.zero));
+                      EffectLayer.maybeOf(context)
+                        ?..floatText(c - const Offset(0, 20), '+${Fmt.compact(amount)} varil')
+                        ..burst(c, count: 16);
+                    }
+                  },
           ),
-          icon: const Icon(Icons.oil_barrel, color: Palette.gold),
-          label: Text('Tüm kuyuları topla (${Fmt.compact(total)})'),
-          onPressed: total < 1
-              ? null
-              : () {
-                  final amount = ref.read(gameControllerProvider.notifier).collectAll();
-                  ref.read(feedbackProvider).medium(SoundCue.collect);
-                  final box = ctx.findRenderObject() as RenderBox?;
-                  if (box != null) {
-                    final c = box.localToGlobal(box.size.center(Offset.zero));
-                    EffectLayer.maybeOf(context)
-                      ?..floatText(c - const Offset(0, 20), '+${Fmt.compact(amount)} varil')
-                      ..burst(c, count: 16);
-                  }
-                },
         );
       },
     );

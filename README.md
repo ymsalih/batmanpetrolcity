@@ -46,6 +46,21 @@ Ayrıca:
 
 Shader'lar `ShaderSlot` ile widget başına kalıcı tutulur. Her çizimde yeni örnek oluşturmak, önbelleğe alınmış resimlerde uniform'ların bozulmasına yol açıyordu.
 
+## Premium arayüz
+
+- **Açılış ekranı:** Gerçekçi manzara önünde altın altıgen amblem (kule + petrol damlası), parlayan başlık; dokununca atlanır.
+- **Buzlu cam HUD ve alt menü:** İçerik tam ekran; üst bilgi ve alt menü arka planı bulanıklaştıran cam paneller olarak yüzer. Para ve varil sayarak ilerler.
+- **Premium butonlar** (`core/ui/premium.dart`): gradyan, üst parlama, periyodik ışık süpürmesi, basınca küçülme.
+- **Cam kartlar**, altın gradyanlı başlıklar, ince altın çizgili bölüm başlıkları, yumuşak solma + yakınlaşma sayfa geçişi, cam üst barlı sondaj ekranı.
+
+## Ses
+
+`core/services/synth.dart` tüm ses efektlerini (ve rüzgâr + motor uğultulu ortam döngüsünü) dosya kullanmadan matematiksel olarak WAV'a dönüştürür. Çalmak için bir ses paketi (ör. `audioplayers`) eklenip `AudioService` uygulanır; tetikleme noktaları hazırdır.
+
+## Claude Code izinleri
+
+`.claude/settings.json`, Flutter komutlarını (`flutter pub add/get/remove`, `analyze`, `test`, `build web`, `dart format`) sormadan çalıştırmak için izin kuralları içerir. Ayarlar oturum başında okunur; yeni oturumlarda geçerlidir.
+
 ## Çalıştırma
 
 ```bash

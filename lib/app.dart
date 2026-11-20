@@ -8,7 +8,9 @@ import 'core/navigation.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
 import 'core/widgets/hud.dart';
+import 'features/events/effects_bar.dart';
 import 'features/events/offline_dialog.dart';
+import 'features/intro/intro_gate.dart';
 import 'features/map/map_screen.dart';
 import 'features/market/market_screen.dart';
 import 'features/mascot/tutorial_overlay.dart';
@@ -29,7 +31,35 @@ class PetrolAgasiApp extends StatelessWidget {
         colorScheme: scheme,
         scaffoldBackgroundColor: Palette.oil,
         useMaterial3: true,
-        snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Palette.panelLight,
+          contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: const Color(0xF2201A16),
+          modalBackgroundColor: const Color(0xF2201A16),
+          showDragHandle: true,
+          dragHandleColor: Colors.white24,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          modalBarrierColor: Colors.black.withValues(alpha: 0.55),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Palette.panelLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          titleTextStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+        ),
+        cardTheme: CardThemeData(
+          color: Palette.panel.withValues(alpha: 0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+          ),
+        ),
       ),
       // Efekt katmanı ve Usta balonu Navigator'ın üstünde: tüm ekranlarda görünür.
       builder: (context, child) => EffectLayer(
@@ -41,7 +71,7 @@ class PetrolAgasiApp extends StatelessWidget {
           ],
         ),
       ),
-      home: const GameShell(),
+      home: const IntroGate(child: GameShell()),
     );
   }
 }
@@ -83,46 +113,27 @@ class _GameShellState extends ConsumerState<GameShell> {
     final hasOfflineReport = ref.watch(gameControllerProvider.select((s) => s.offlineReport != null));
     final tutorialDone = ref.watch(gameControllerProvider.select((s) => s.tutorialDone));
 
+    // İçerik tam ekran; HUD ve alt menü üstünde buzlu cam olarak yüzer.
+    final mq = MediaQuery.of(context);
+    final contentPadding = mq.padding.copyWith(top: ShellMetrics.hud(context), bottom: ShellMetrics.nav(context));
+
     return Scaffold(
       body: Stack(
         children: [
-          Column(
-            children: [
-              const GameHud(),
-              Expanded(
-                child: IndexedStack(
-                  index: tab.index,
-                  children: const [MapScreen(), SiteScreen(), MarketScreen(), SettingsScreen()],
-                ),
+          Positioned.fill(
+            child: MediaQuery(
+              data: mq.copyWith(padding: contentPadding),
+              child: IndexedStack(
+                index: tab.index,
+                children: const [MapScreen(), SiteScreen(), MarketScreen(), SettingsScreen()],
               ),
-            ],
+            ),
           ),
+          const Positioned(top: 0, left: 0, right: 0, child: GameHud()),
+          Positioned(top: ShellMetrics.hud(context), left: 12, right: 12, child: const EffectsBar()),
+          const Positioned(left: 0, right: 0, bottom: 0, child: GlassNavBar()),
           if (!tutorialDone) const Positioned.fill(child: TutorialOverlay()),
           if (hasOfflineReport && tutorialDone) const Positioned.fill(child: OfflineReportOverlay()),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab.index,
-        backgroundColor: Palette.panel,
-        indicatorColor: Palette.sunset.withValues(alpha: 0.35),
-        onDestinationSelected: (i) => ref.read(navProvider.notifier).go(AppTab.values[i]),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Harita'),
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view),
-            label: 'Saha',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront),
-            label: 'Pazar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Ayarlar',
-          ),
         ],
       ),
     );

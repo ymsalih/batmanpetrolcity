@@ -27,6 +27,7 @@ class CrossSectionPainter extends CustomPainter {
     this.oilRise = 0,
     this.oilShader,
     this.geoImage,
+    this.topInset = 0,
   });
 
   final double progress;
@@ -47,7 +48,10 @@ class CrossSectionPainter extends CustomPainter {
   /// Her karede shader çalıştırmamak için önbellekten gelir.
   final ui.Image? geoImage;
 
-  static const surfaceFraction = 0.22;
+  /// Üstte yüzen çubuğun yüksekliği: kule bunun altına sığdırılır.
+  final double topInset;
+
+  static const surfaceFraction = 0.27;
 
   static double _targetFraction(List<GeoLayer> layers) {
     final total = layers.fold(0.0, (a, l) => a + l.thickness);
@@ -223,7 +227,7 @@ class CrossSectionPainter extends CustomPainter {
       Rect.fromLTWH(0, surfaceY - 3, w, 5),
       Paint()..color = PaintKit.nightTint(const Color(0xFF6E8A35), night),
     );
-    final derrickH = surfaceY * 0.92;
+    final derrickH = (surfaceY - topInset) * 0.94;
     DerrickPainter.drawDerrick(
       canvas,
       Rect.fromLTWH(w / 2 - derrickH * 0.36, surfaceY - derrickH + 2, derrickH * 0.72, derrickH),

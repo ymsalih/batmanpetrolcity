@@ -10,6 +10,7 @@ import '../../core/models/parcel.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
 import '../../core/visuals/landscape.dart';
@@ -198,11 +199,7 @@ class ParcelTile extends ConsumerWidget {
         showParcelSheet(context, siteId, index);
       case ParcelStatus.drilling:
         fb.light();
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => DrillingScreen(siteId: siteId, index: index),
-          ),
-        );
+        Navigator.of(context).push(premiumRoute(DrillingScreen(siteId: siteId, index: index)));
       case ParcelStatus.dry:
         fb.light();
         showParcelSheet(context, siteId, index);

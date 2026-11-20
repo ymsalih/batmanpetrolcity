@@ -7,6 +7,8 @@ import '../../core/economy/economy.dart';
 import '../../core/game/game_controller.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
+import '../../core/ui/premium.dart';
+import '../../core/ui/premium_backdrop.dart';
 import '../../core/utils/format.dart';
 import '../../core/widgets/effect_layer.dart';
 import '../mascot/usta_controller.dart';
@@ -25,115 +27,119 @@ class MarketScreen extends ConsumerWidget {
     final change = prev == 0 ? 0.0 : (s.oilPrice - prev) / prev * 100;
     final nextChange = Duration(milliseconds: (s.nextPriceChangeMs - now).clamp(0, 1 << 31));
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
-      children: [
-        // Fiyat kartı
-        _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text('Ham petrol', style: TextStyle(color: Colors.white70)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sonraki değişim ${Fmt.clock(nextChange)}',
-                      textAlign: TextAlign.right,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white54, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Row(
+    final pad = MediaQuery.paddingOf(context);
+    return PremiumBackdrop(
+      seed: 13,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, pad.bottom + 16),
+        children: [
+          // Fiyat kartı
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      Fmt.price(s.oilPrice),
-                      key: const Key('oil_price'),
-                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white),
-                    ),
-                    const Text(' /varil', style: TextStyle(color: Colors.white54)),
-                    const SizedBox(width: 10),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                    const Text('Ham petrol', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(width: 8),
+                    Expanded(
                       child: Text(
-                        '${change >= 0 ? '▲' : '▼'} %${Fmt.decimal(change.abs(), 1)}',
-                        style: TextStyle(
-                          color: change >= 0 ? Palette.success : Palette.danger,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        'Sonraki değişim ${Fmt.clock(nextChange)}',
+                        textAlign: TextAlign.right,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white54, fontSize: 12),
                       ),
                     ),
                   ],
                 ),
-              ),
-              if (priceMult != 1)
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: Palette.success, borderRadius: BorderRadius.circular(8)),
-                  child: Text(
-                    'Fiyat uçtu! Satışlar x${Fmt.decimal(priceMult, 0)}',
-                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        Fmt.price(s.oilPrice),
+                        key: const Key('oil_price'),
+                        style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white),
+                      ),
+                      const Text(' /varil', style: TextStyle(color: Colors.white54)),
+                      const SizedBox(width: 10),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '${change >= 0 ? '▲' : '▼'} %${Fmt.decimal(change.abs(), 1)}',
+                          style: TextStyle(
+                            color: change >= 0 ? Palette.success : Palette.danger,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 160,
-                child: CustomPaint(size: Size.infinite, painter: PriceChartPainter(history)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        _SellCard(
-          title: 'Ham petrol sat',
-          icon: Icons.oil_barrel,
-          stock: s.crude,
-          unitPrice: s.oilPrice * priceMult,
-          unitLabel: 'varil',
-          onSell: (amount) => ref.read(gameControllerProvider.notifier).sellCrude(amount),
-          keyPrefix: 'crude',
-        ),
-        const SizedBox(height: 12),
-        if (s.refineryUnlocked) ...[
-          const _RefineCard(),
-          const SizedBox(height: 12),
-          _SellCard(
-            title: 'Akaryakıt sat',
-            icon: Icons.local_gas_station,
-            stock: s.refined,
-            unitPrice: Economy.refinedPrice(s.oilPrice) * priceMult,
-            unitLabel: 'birim',
-            onSell: (amount) => ref.read(gameControllerProvider.notifier).sellRefined(amount),
-            keyPrefix: 'refined',
-          ),
-        ] else
-          _Card(
-            child: Row(
-              children: [
-                const Icon(Icons.factory, color: Colors.white38, size: 36),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Rafineri kilitli. Haritadan "${GameConfig.sites.firstWhere((c) => c.unlocksRefinery).name}" '
-                    'açılınca varilleri akaryakıta çevirip x${Fmt.decimal(GameConfig.refinedPriceMultiplier, 1)} '
-                    'fiyata satabilirsin.',
-                    style: const TextStyle(color: Colors.white60),
+                if (priceMult != 1)
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Palette.success, borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                      'Fiyat uçtu! Satışlar x${Fmt.decimal(priceMult, 0)}',
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
+                    ),
                   ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 160,
+                  child: CustomPaint(size: Size.infinite, painter: PriceChartPainter(history)),
                 ),
               ],
             ),
           ),
-      ],
+          const SizedBox(height: 12),
+          _SellCard(
+            title: 'Ham petrol sat',
+            icon: Icons.oil_barrel,
+            stock: s.crude,
+            unitPrice: s.oilPrice * priceMult,
+            unitLabel: 'varil',
+            onSell: (amount) => ref.read(gameControllerProvider.notifier).sellCrude(amount),
+            keyPrefix: 'crude',
+          ),
+          const SizedBox(height: 12),
+          if (s.refineryUnlocked) ...[
+            const _RefineCard(),
+            const SizedBox(height: 12),
+            _SellCard(
+              title: 'Akaryakıt sat',
+              icon: Icons.local_gas_station,
+              stock: s.refined,
+              unitPrice: Economy.refinedPrice(s.oilPrice) * priceMult,
+              unitLabel: 'birim',
+              onSell: (amount) => ref.read(gameControllerProvider.notifier).sellRefined(amount),
+              keyPrefix: 'refined',
+            ),
+          ] else
+            _Card(
+              child: Row(
+                children: [
+                  const Icon(Icons.factory, color: Colors.white38, size: 36),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Rafineri kilitli. Haritadan "${GameConfig.sites.firstWhere((c) => c.unlocksRefinery).name}" '
+                      'açılınca varilleri akaryakıta çevirip x${Fmt.decimal(GameConfig.refinedPriceMultiplier, 1)} '
+                      'fiyata satabilirsin.',
+                      style: const TextStyle(color: Colors.white60),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -143,15 +149,7 @@ class _Card extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Palette.panel,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.white10),
-    ),
-    child: child,
-  );
+  Widget build(BuildContext context) => GlassPanel(radius: 22, child: child);
 }
 
 class _SellCard extends ConsumerWidget {
@@ -224,21 +222,25 @@ class _SellCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: Builder(
-                  builder: (ctx) => OutlinedButton(
+                  builder: (ctx) => PremiumButton(
                     key: Key('${keyPrefix}_sell_half'),
+                    colors: Premium.steel,
+                    shine: false,
+                    height: 48,
+                    label: 'Yarısını sat',
                     onPressed: whole >= 2 ? () => sell(ctx, (whole / 2).floorToDouble()) : null,
-                    child: const Text('Yarısını sat'),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Builder(
-                  builder: (ctx) => FilledButton(
+                  builder: (ctx) => PremiumButton(
                     key: Key('${keyPrefix}_sell_all'),
-                    style: FilledButton.styleFrom(backgroundColor: Palette.sunset),
+                    height: 48,
+                    icon: Icons.sell,
+                    label: 'Hepsini sat',
                     onPressed: whole >= 1 ? () => sell(ctx, whole) : null,
-                    child: const Text('Hepsini sat'),
                   ),
                 ),
               ),
@@ -276,11 +278,11 @@ class _RefineCard extends ConsumerWidget {
             style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
+          PremiumButton(
             key: const Key('refine_all'),
-            style: FilledButton.styleFrom(backgroundColor: Palette.steel, minimumSize: const Size.fromHeight(46)),
-            icon: const Icon(Icons.autorenew),
-            label: Text('${Fmt.compact(crude)} varili rafine et · ${Fmt.money(cost)}'),
+            colors: Premium.steel,
+            icon: Icons.autorenew,
+            label: '${Fmt.compact(crude)} varili rafine et · ${Fmt.money(cost)}',
             onPressed: crude < 1
                 ? null
                 : () {

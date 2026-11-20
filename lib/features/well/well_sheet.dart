@@ -9,6 +9,7 @@ import '../../core/models/parcel.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
 import '../../core/visuals/landscape.dart';
@@ -193,10 +194,15 @@ class _UpgradeRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           if (cost != null)
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Palette.sunset),
+            PremiumButton(
+              expand: false,
+              height: 42,
+              fontSize: 14,
+              colors: Premium.gold,
+              foreground: const Color(0xFF3A2508),
+              shine: false,
+              label: Fmt.money(cost!),
               onPressed: affordable ? onPressed : null,
-              child: Text(Fmt.money(cost!)),
             ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../config/palette.dart';
 import '../../core/game/game_controller.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/widgets/effect_layer.dart';
 import '../mascot/usta_avatar.dart';
 import '../mascot/usta_controller.dart';
@@ -64,10 +65,11 @@ class OfflineReportOverlay extends ConsumerWidget {
             const SizedBox(height: 16),
             Builder(
               builder: (ctx) {
-                return FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Palette.sunset, minimumSize: const Size(200, 48)),
-                  icon: const Icon(Icons.oil_barrel),
-                  label: const Text('Hepsini topla'),
+                return PremiumButton(
+                  colors: Premium.gold,
+                  foreground: const Color(0xFF3A2508),
+                  icon: Icons.oil_barrel,
+                  label: 'Hepsini topla',
                   onPressed: () {
                     final box = ctx.findRenderObject() as RenderBox?;
                     final ctrl = ref.read(gameControllerProvider.notifier);

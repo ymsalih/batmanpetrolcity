@@ -11,6 +11,7 @@ import '../../core/navigation.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/premium.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
 import '../mascot/usta_controller.dart';
@@ -90,7 +91,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
               ),
             Positioned(
               left: 12,
-              bottom: 12,
+              bottom: MediaQuery.paddingOf(context).bottom + 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(10)),
@@ -229,9 +230,13 @@ class _UnlockDialog extends ConsumerWidget {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
-        FilledButton(
+        PremiumButton(
           key: const Key('unlock_confirm'),
-          style: FilledButton.styleFrom(backgroundColor: Palette.sunset),
+          expand: false,
+          height: 46,
+          colors: canAfford ? Premium.gold : Premium.steel,
+          foreground: canAfford ? const Color(0xFF3A2508) : Colors.white,
+          label: canAfford ? 'Aç · ${Fmt.money(site.unlockCost)}' : 'Yetersiz bakiye',
           onPressed: canAfford
               ? () {
                   final r = ref.read(gameControllerProvider.notifier).unlockSite(site.id);
@@ -242,7 +247,6 @@ class _UnlockDialog extends ConsumerWidget {
                   }
                 }
               : () => ref.read(ustaProvider.notifier).noMoney(),
-          child: Text(canAfford ? 'Aç · ${Fmt.money(site.unlockCost)}' : 'Yetersiz bakiye'),
         ),
       ],
     );

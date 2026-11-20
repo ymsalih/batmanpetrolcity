@@ -6,6 +6,8 @@ import '../../config/palette.dart';
 import '../../core/game/game_controller.dart';
 import '../../core/models/active_effect.dart';
 import '../../core/services/services.dart';
+import '../../core/ui/premium.dart';
+import '../../core/ui/premium_backdrop.dart';
 import '../../core/utils/format.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -19,112 +21,116 @@ class SettingsScreen extends ConsumerWidget {
     final leaderboard = ref.watch(leaderboardServiceProvider);
     final gps = ref.watch(locationBonusServiceProvider);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
-      children: [
-        _section('Ayarlar'),
-        Card(
-          child: Column(
-            children: [
-              SwitchListTile(
-                title: const Text('Titreşim'),
-                secondary: const Icon(Icons.vibration),
-                value: s.hapticsEnabled,
-                onChanged: ctrl.setHaptics,
-              ),
-              SwitchListTile(
-                title: const Text('Ses efektleri'),
-                subtitle: const Text('Ses paketi yakında'),
-                secondary: const Icon(Icons.volume_up),
-                value: s.soundEnabled,
-                onChanged: ctrl.setSound,
-              ),
-              ListTile(
-                leading: const Icon(Icons.school),
-                title: const Text('Usta\'nın rehberini tekrar izle'),
-                onTap: ctrl.restartTutorial,
-              ),
-              ListTile(
-                leading: const Icon(Icons.save),
-                title: const Text('Şimdi kaydet'),
-                subtitle: Text(
-                  'Oyun her ${GameConfig.autoSaveSeconds} sn\'de ve uygulama arka plana geçince otomatik kaydedilir.',
-                ),
-                onTap: () async {
-                  await ctrl.save();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kaydedildi')));
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-        _section('İstatistikler'),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+    final pad = MediaQuery.paddingOf(context);
+    return PremiumBackdrop(
+      seed: 17,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, pad.bottom + 16),
+        children: [
+          _section('Ayarlar'),
+          Card(
             child: Column(
               children: [
-                _stat('Toplam üretim', Fmt.barrels(s.stats.totalBarrels)),
-                _stat('Toplam kazanç', Fmt.money(s.stats.totalEarned)),
-                _stat('Açılan kuyu', Fmt.integer(s.stats.wellsDrilled)),
-                _stat('Kuru kuyu', Fmt.integer(s.stats.dryWells)),
+                SwitchListTile(
+                  title: const Text('Titreşim'),
+                  secondary: const Icon(Icons.vibration),
+                  value: s.hapticsEnabled,
+                  onChanged: ctrl.setHaptics,
+                ),
+                SwitchListTile(
+                  title: const Text('Ses efektleri'),
+                  subtitle: const Text('Ses paketi yakında'),
+                  secondary: const Icon(Icons.volume_up),
+                  value: s.soundEnabled,
+                  onChanged: ctrl.setSound,
+                ),
+                ListTile(
+                  leading: const Icon(Icons.school),
+                  title: const Text('Usta\'nın rehberini tekrar izle'),
+                  onTap: ctrl.restartTutorial,
+                ),
+                ListTile(
+                  leading: const Icon(Icons.save),
+                  title: const Text('Şimdi kaydet'),
+                  subtitle: Text(
+                    'Oyun her ${GameConfig.autoSaveSeconds} sn\'de ve uygulama arka plana geçince otomatik kaydedilir.',
+                  ),
+                  onTap: () async {
+                    await ctrl.save();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kaydedildi')));
+                    }
+                  },
+                ),
               ],
             ),
           ),
-        ),
-        _section('Yakında'),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                enabled: ads.isAvailable,
-                leading: const Icon(Icons.smart_display),
-                title: const Text('Reklam izle: 2 saat üretim x2'),
-                subtitle: const Text('Yakında'),
-                onTap: () async {
-                  if (await ads.showRewardedAd()) {
-                    ctrl.grantBoost(
-                      title: 'Reklam bonusu',
-                      source: EffectSource.ad,
-                      duration: AdRewardConfig.boostDuration,
-                      productionMultiplier: AdRewardConfig.productionMultiplier,
-                    );
-                  }
-                },
+          _section('İstatistikler'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _stat('Toplam üretim', Fmt.barrels(s.stats.totalBarrels)),
+                  _stat('Toplam kazanç', Fmt.money(s.stats.totalEarned)),
+                  _stat('Açılan kuyu', Fmt.integer(s.stats.wellsDrilled)),
+                  _stat('Kuru kuyu', Fmt.integer(s.stats.dryWells)),
+                ],
               ),
-              ListTile(
-                enabled: leaderboard.isAvailable,
-                leading: const Icon(Icons.leaderboard),
-                title: const Text('Liderlik tablosu'),
-                subtitle: const Text('Yakında'),
-              ),
-              ListTile(
-                enabled: gps.isAvailable,
-                leading: const Icon(Icons.location_on),
-                title: const Text('Raman\'a git, bonus kazan (GPS)'),
-                subtitle: const Text('Yakında'),
-              ),
-            ],
+            ),
           ),
-        ),
-        _section('Tehlikeli bölge'),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.delete_forever, color: Palette.danger),
-            title: const Text('Oyunu sıfırla'),
-            onTap: () => _confirmReset(context, ref),
+          _section('Yakında'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  enabled: ads.isAvailable,
+                  leading: const Icon(Icons.smart_display),
+                  title: const Text('Reklam izle: 2 saat üretim x2'),
+                  subtitle: const Text('Yakında'),
+                  onTap: () async {
+                    if (await ads.showRewardedAd()) {
+                      ctrl.grantBoost(
+                        title: 'Reklam bonusu',
+                        source: EffectSource.ad,
+                        duration: AdRewardConfig.boostDuration,
+                        productionMultiplier: AdRewardConfig.productionMultiplier,
+                      );
+                    }
+                  },
+                ),
+                ListTile(
+                  enabled: leaderboard.isAvailable,
+                  leading: const Icon(Icons.leaderboard),
+                  title: const Text('Liderlik tablosu'),
+                  subtitle: const Text('Yakında'),
+                ),
+                ListTile(
+                  enabled: gps.isAvailable,
+                  leading: const Icon(Icons.location_on),
+                  title: const Text('Raman\'a git, bonus kazan (GPS)'),
+                  subtitle: const Text('Yakında'),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Batman Petrol Ağası, Batman ilinin petrol tarihinden ilham alan bir hayran oyunudur. '
-          'DC Comics veya herhangi bir çizgi roman karakteriyle ilgisi yoktur.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white54, fontSize: 12),
-        ),
-      ],
+          _section('Tehlikeli bölge'),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.delete_forever, color: Palette.danger),
+              title: const Text('Oyunu sıfırla'),
+              onTap: () => _confirmReset(context, ref),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Batman Petrol Ağası, Batman ilinin petrol tarihinden ilham alan bir hayran oyunudur. '
+            'DC Comics veya herhangi bir çizgi roman karakteriyle ilgisi yoktur.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 
@@ -147,13 +153,7 @@ class SettingsScreen extends ConsumerWidget {
     if (ok == true) await ref.read(gameControllerProvider.notifier).resetGame();
   }
 
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-    child: Text(
-      title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Palette.sunsetLight),
-    ),
-  );
+  Widget _section(String title) => SectionHeader(title);
 
   Widget _stat(String label, String value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
