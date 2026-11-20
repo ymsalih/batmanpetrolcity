@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -10,6 +12,8 @@ import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/visuals/day_night.dart';
+import '../../core/visuals/landscape.dart';
+import '../../core/visuals/shaders.dart';
 import '../../core/widgets/effect_layer.dart';
 import 'parcel_tile.dart';
 
@@ -27,71 +31,127 @@ class SiteScreen extends ConsumerWidget {
     final dn = ref.watch(dayNightProvider);
     final cfg = GameConfig.site(siteId);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: const [0, 0.18, 0.18, 1],
-          colors: [dn.skyTop, dn.skyBottom, dn.shade(Palette.earthLight), dn.shade(const Color(0xFF4E3019))],
+    final siteIndex = GameConfig.sites.indexWhere((c) => c.id == siteId);
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: _SiteBackground(
+            dn: dn,
+            seed: siteIndex,
+            parallax: siteIndex / max(1, GameConfig.sites.length - 1) * 2 - 1,
+          ),
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // Saha seçici
-            SizedBox(
-              height: 52,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                scrollDirection: Axis.horizontal,
-                children: [
-                  for (final c in GameConfig.sites)
-                    if (unlocked.split(',').contains(c.id))
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(c.name),
-                          selected: c.id == siteId,
-                          selectedColor: Palette.sunset,
-                          onSelected: (_) => ref.read(gameControllerProvider.notifier).selectSite(c.id),
+        SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              // Saha seçici
+              SizedBox(
+                height: 52,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final c in GameConfig.sites)
+                      if (unlocked.split(',').contains(c.id))
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(c.name),
+                            selected: c.id == siteId,
+                            selectedColor: Palette.sunset,
+                            onSelected: (_) => ref.read(gameControllerProvider.notifier).selectSite(c.id),
+                          ),
                         ),
-                      ),
-                  ActionChip(
-                    avatar: const Icon(Icons.map, size: 18),
-                    label: const Text('Yeni saha'),
-                    onPressed: () => ref.read(navProvider.notifier).go(AppTab.map),
-                  ),
-                ],
+                    ActionChip(
+                      avatar: const Icon(Icons.map, size: 18),
+                      label: const Text('Yeni saha'),
+                      onPressed: () => ref.read(navProvider.notifier).go(AppTab.map),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            _SiteHeader(cfg: cfg),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: GridView.count(
-                      crossAxisCount: GameConfig.gridSize,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (var i = 0; i < GameConfig.gridSize * GameConfig.gridSize; i++)
-                          ParcelTile(key: ValueKey('$siteId-$i'), siteId: siteId, index: i),
-                      ],
+              _SiteHeader(cfg: cfg),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: GridView.count(
+                        crossAxisCount: GameConfig.gridSize,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          for (var i = 0; i < GameConfig.gridSize * GameConfig.gridSize; i++)
+                            ParcelTile(key: ValueKey('$siteId-$i'), siteId: siteId, index: i),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const _CollectAllButton(),
-            const SizedBox(height: 8),
-          ],
+              const _CollectAllButton(),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
-      ),
+      ],
+    );
+  }
+}
+
+/// Üstte paralaks manzara, altta bulut gölgeleri gezinen toprak zemin.
+class _SiteBackground extends StatefulWidget {
+  const _SiteBackground({required this.dn, required this.seed, required this.parallax});
+  final DayNight dn;
+  final int seed;
+  final double parallax;
+
+  @override
+  State<_SiteBackground> createState() => _SiteBackgroundState();
+}
+
+class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProviderStateMixin, TimeTicker {
+  @override
+  Widget build(BuildContext context) {
+    final dn = widget.dn;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final band = box.maxHeight * 0.18;
+        return Stack(
+          children: [
+            Positioned(
+              top: band,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [dn.shade(Palette.earthLight), dn.shade(const Color(0xFF4E3019))],
+                  ),
+                ),
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: CloudShadowPainter(time: seconds, night: dn.night),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: band + 1,
+              child: LandscapeBackdrop(seed: widget.seed, parallax: widget.parallax),
+            ),
+          ],
+        );
+      },
     );
   }
 }

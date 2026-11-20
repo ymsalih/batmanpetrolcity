@@ -9,7 +9,10 @@ import '../../core/visuals/day_night.dart';
 /// Batman'ın stilize haritası: Raman Dağı silüeti, Batman Çayı, Dicle,
 /// şehir, yollar ve rafineri. Gece şehir ve rafineri ışıkları yanar.
 class MapPainter extends CustomPainter {
-  MapPainter({required this.dayNight, required this.unlocked, required this.time});
+  MapPainter({required this.dayNight, required this.unlocked, required this.time, this.skyFromShader = false});
+
+  /// true ise gökyüzü, güneş ve yıldızlar arkadaki shader katmanında çizilir.
+  final bool skyFromShader;
 
   final DayNight dayNight;
   final Set<String> unlocked;
@@ -28,15 +31,17 @@ class MapPainter extends CustomPainter {
 
     // Gökyüzü
     final sky = Rect.fromLTWH(0, 0, w, horizonY + 2);
-    canvas.drawRect(
-      sky,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [dn.skyTop, dn.skyBottom],
-        ).createShader(sky),
-    );
+    if (!skyFromShader) {
+      canvas.drawRect(
+        sky,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [dn.skyTop, dn.skyBottom],
+          ).createShader(sky),
+      );
+    }
     _paintSunMoon(canvas, size, horizonY);
 
     // Raman Dağı silüeti
@@ -150,7 +155,7 @@ class MapPainter extends CustomPainter {
     final a = dn.phase * 2 * pi;
     final sun = Offset(size.width * (0.5 - 0.42 * cos(a - pi / 2)), horizonY - horizonY * 0.85 * sin(a - pi / 2));
     final moon = Offset(size.width * (0.5 + 0.42 * cos(a - pi / 2)), horizonY + horizonY * 0.85 * sin(a - pi / 2));
-    if (dn.night > 0.3) {
+    if (dn.night > 0.3 && !skyFromShader) {
       final rng = Random(11);
       final star = Paint()..color = Colors.white.withValues(alpha: (dn.night - 0.3) * 1.2);
       for (var i = 0; i < 40; i++) {
@@ -162,7 +167,7 @@ class MapPainter extends CustomPainter {
         );
       }
     }
-    if (sun.dy < horizonY) {
+    if (sun.dy < horizonY && !skyFromShader) {
       canvas.drawCircle(
         sun,
         22,

@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'config/game_config.dart';
 import 'config/palette.dart';
 import 'core/game/game_controller.dart';
 import 'core/navigation.dart';
+import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
 import 'core/widgets/hud.dart';
 import 'features/events/offline_dialog.dart';
@@ -34,6 +36,7 @@ class PetrolAgasiApp extends StatelessWidget {
         child: Stack(
           children: [
             child!,
+            const Positioned.fill(child: _HeatLayer()),
             const Positioned(left: 8, right: 8, bottom: 88, child: UstaBubble()),
           ],
         ),
@@ -123,5 +126,21 @@ class _GameShellState extends ConsumerState<GameShell> {
         ],
       ),
     );
+  }
+}
+
+/// Batman sıcağı aktifken tüm ekranı kaplayan ısı dalgası.
+class _HeatLayer extends ConsumerWidget {
+  const _HeatLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(
+      gameControllerProvider.select(
+        (s) => s.effects.any((e) => e.eventKind == GameEventKind.heatWave && e.isActiveAt(s.lastTickMs)),
+      ),
+    );
+    if (!active) return const SizedBox.shrink();
+    return const HeatHazeOverlay(strength: 1);
   }
 }

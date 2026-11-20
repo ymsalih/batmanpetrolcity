@@ -29,6 +29,15 @@ class DayNight {
 
   bool get lightsOn => night > 0.45;
 
+  /// Güneşin gökyüzü alanındaki göreli konumu (y>1: ufkun altında).
+  Offset get sunPosition {
+    final a = phase * 2 * pi - pi / 2;
+    return Offset(0.5 - 0.42 * cos(a), 1 - 0.85 * sin(a));
+  }
+
+  /// Güneşin yatay yönü (-1 sol .. 1 sağ). Gölgeler ters yöne düşer.
+  double get sunX => ((sunPosition.dx - 0.5) / 0.42).clamp(-1.0, 1.0);
+
   Color get skyTop {
     final day = Color.lerp(Palette.sky, Palette.sunset, dusk * 0.5)!;
     return Color.lerp(day, Palette.night, night)!;

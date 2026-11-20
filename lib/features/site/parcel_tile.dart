@@ -29,6 +29,7 @@ class ParcelTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final parcel = ref.watch(gameControllerProvider.select((s) => s.site(siteId).parcels[index]));
     final night = ref.watch(dayNightProvider.select((d) => d.night));
+    final sunX = ref.watch(dayNightProvider.select((d) => d.sunX));
     final cfg = GameConfig.site(siteId);
 
     return GestureDetector(
@@ -48,7 +49,7 @@ class ParcelTile extends ConsumerWidget {
                 highlight: parcel.surveyed && parcel.status == ParcelStatus.empty ? parcel.tier?.color : null,
               ),
             ),
-            ..._content(context, ref, parcel, cfg, night),
+            ..._content(context, ref, parcel, cfg, night, sunX),
             Positioned(
               left: 6,
               top: 4,
@@ -63,7 +64,7 @@ class ParcelTile extends ConsumerWidget {
     );
   }
 
-  List<Widget> _content(BuildContext context, WidgetRef ref, Parcel p, SiteConfig cfg, double night) {
+  List<Widget> _content(BuildContext context, WidgetRef ref, Parcel p, SiteConfig cfg, double night, double sunX) {
     final visuals = ref.read(gameVisualsProvider);
     switch (p.status) {
       case ParcelStatus.empty:
@@ -88,7 +89,7 @@ class ParcelTile extends ConsumerWidget {
         return [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 22),
-            child: visuals.derrick(lightsOn: night > 0.45),
+            child: visuals.derrick(lightsOn: night > 0.45, night: night),
           ),
           Positioned(left: 6, right: 6, bottom: 6, child: _DrillProgress(parcel: p)),
         ];
@@ -115,8 +116,8 @@ class ParcelTile extends ConsumerWidget {
         final full = fill >= 0.999;
         return [
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 14, 18),
-            child: visuals.pumpjack(broken: p.broken, speed: 1 + p.pumpLevel * 0.15, night: night),
+            padding: const EdgeInsets.fromLTRB(2, 12, 11, 15),
+            child: visuals.pumpjack(broken: p.broken, speed: 1 + p.pumpLevel * 0.15, night: night, sunX: sunX),
           ),
           // Depo göstergesi
           Positioned(

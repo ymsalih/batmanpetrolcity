@@ -30,6 +30,17 @@ Ayrıca:
 - **Geri bildirim:** "+N varil" yükselen yazılar, parçacıklar, `HapticFeedback`.
 - **Kayıt:** `shared_preferences`, her 10 saniyede ve uygulama arka plana geçince otomatik.
 
+## Görsel gerçekçilik (görsel dosya olmadan)
+
+| Katman | Nasıl |
+|---|---|
+| **At kafası** | Gerçek dört-çubuk mekanizması: krank sabit hızla döner, biyel kolu sabit boydadır, kiriş açısı iki çemberin kesişiminden hesaplanır. At başı pivot merkezli bir yay olduğundan halat hep dikey sarkar ve cilalı çubuk düz iner. Metal gradyanlar, karşı ağırlık, kayış koruyucu, titreşen motor, egzoz dumanı, kuyu başında petrol lekesi, güneş yönüne göre düşen gölge, gece çalışma lambası. Her kuyu farklı fazda başlar. |
+| **Sondaj kulesi** | Alt yapı, platform, sondajcı kabini, dönen vinç tamburu, kafes direk, iniş-çıkış yapan makara bloğu, istiflenmiş borular, çamur tankları, dalgalanan bayrak, yanıp sönen ikaz lambası. |
+| **Yer altı kesiti** | Dalgalı ve kubbeli (petrol kapanı) katman sınırları, tanecik dokusu, derinlikle artan karanlık, muhafaza borusu, halka boşlukta yukarı akan kırıntılar, üç konili dönen matkap. Petrol bulununca kuyuda petrol yükselir, ekran sarsılır, ardından fışkırma başlar. |
+| **Fışkırma** | Fiziksel parçacık sistemi (`core/visuals/particles.dart`): yerçekimi, hava direnci, rüzgâr, hıza göre uzayan damlalar, yere çarpınca sıçrama, hacimle büyüyen ve yanardöner petrol gölü, sis. |
+| **Shader'lar** (`shaders/*.frag`, GLSL kodu) | `sky.frag`: fbm gürültülü hareketli bulutlar, güneş ışıması, gece yıldızları. `heat_haze.frag`: Batman sıcağı sırasında ekranı kaplayan ısı dalgası. `oil_sheen.frag`: rezervuarda ince film yanardönerliği. Shader yüklenemezse gradyan yedeğine düşülür. |
+| **Ortam** | Atmosferik perspektifli katmanlı tepeler (paralaks), uzakta sallanan at kafası silüetleri, süzülen kuşlar, araziyi gezen bulut gölgeleri. |
+
 ## Çalıştırma
 
 ```bash
@@ -109,7 +120,7 @@ Harita işaretçisi, saha ekranı, kayıt ve ekonomi yeni sahayı otomatik olara
 | **Supabase liderlik tablosu** | `LeaderboardService` (`submitScore`, `topScores`) uygulaması. Skor için `GameStats.totalEarned` hazır. Bulut kaydı için `SaveRepository` arayüzü. |
 | **Ödüllü reklam** (2 saat üretim x2) | `RewardedAdService.showRewardedAd()` uygulanır. Ayarlar ekranındaki düğme ödülü `grantBoost` ile `ActiveEffect` olarak verir (`AdRewardConfig`). |
 | **Rive animasyonları** | `GameVisuals` arayüzünü (`pumpjack`, `derrick`, `gusher`, `mascot`) uygulayan bir `RiveGameVisuals` yazıp `gameVisualsProvider`'ı override edin. |
-| **Ses efektleri** | `AudioService.play(SoundCue)` uygulanır, `audioServiceProvider` override edilir. Tüm tetikleme noktaları (`SoundCue`) zaten çağrılıyor. |
+| **Ses efektleri** | `AudioService.play(SoundCue)` uygulanır, `audioServiceProvider` override edilir. Tüm tetikleme noktaları (`SoundCue`) zaten çağrılıyor. Bir ses çalma paketi (ör. `audioplayers`) gerekir. |
 
 ## Testler
 
@@ -117,3 +128,4 @@ Harita işaretçisi, saha ekranı, kayıt ve ekonomi yeni sahayı otomatik olara
 - `test/simulation_test.dart`: sondaj sonucu, Batman sıcağı, arıza, 4 saat sınırı, fiyat geçmişi, kayıt gidiş-dönüş
 - `test/game_controller_test.dart`: bakiye kontrolü, dokunuş sınırı, topla → sat → kaydet → yükle, rafineri, tamir, çevrimdışı rapor
 - `test/widget_smoke_test.dart`: uygulama açılışı ve 5 adımlık rehber
+- `test/painters_test.dart`: tüm painter'lar istisnasız çizer, animasyonlar kare kare çalışır, at kafası mekanizması tüm turda çözülür

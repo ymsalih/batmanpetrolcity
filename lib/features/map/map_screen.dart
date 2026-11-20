@@ -12,6 +12,8 @@ import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/visuals/day_night.dart';
+import '../../core/visuals/landscape.dart';
+import '../../core/visuals/shaders.dart';
 import '../mascot/usta_controller.dart';
 import 'map_painter.dart';
 
@@ -46,12 +48,29 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
       builder: (context, box) {
         return Stack(
           children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: box.maxHeight * MapPainter.horizon + 2,
+              child: const SkyView(),
+            ),
             Positioned.fill(
               child: RepaintBoundary(
                 child: AnimatedBuilder(
                   animation: _anim,
                   builder: (_, _) => CustomPaint(
-                    painter: MapPainter(dayNight: dn, unlocked: unlockedSet, time: _anim.value * 60),
+                    painter: MapPainter(
+                      dayNight: dn,
+                      unlocked: unlockedSet,
+                      time: _anim.value * 60,
+                      skyFromShader: true,
+                    ),
+                    foregroundPainter: CloudShadowPainter(
+                      time: _anim.value * 60,
+                      night: dn.night,
+                      top: MapPainter.horizon,
+                    ),
                   ),
                 ),
               ),

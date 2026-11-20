@@ -9,7 +9,9 @@ import '../../core/models/parcel.dart';
 import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
+import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
+import '../../core/visuals/landscape.dart';
 import '../mascot/usta_controller.dart';
 import '../site/tier_label.dart';
 
@@ -34,6 +36,7 @@ class WellSheet extends ConsumerWidget {
     final cfg = GameConfig.site(siteId);
     final p = ref.watch(gameControllerProvider.select((s) => s.site(siteId).parcels[index]));
     final money = ref.watch(gameControllerProvider.select((s) => s.money));
+    final dn = ref.watch(dayNightProvider);
     final ctrl = ref.read(gameControllerProvider.notifier);
     if (p.status != ParcelStatus.producing) return const SizedBox(height: 120);
 
@@ -60,10 +63,43 @@ class WellSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Yakın plan sahne: gökyüzü, tepeler ve büyük at kafası.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 170,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    LandscapeBackdrop(seed: index + 5),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 34,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [dn.shade(Palette.earthLight), dn.shade(Palette.earth)],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                      child: ref
+                          .read(gameVisualsProvider)
+                          .pumpjack(broken: p.broken, speed: 1 + p.pumpLevel * 0.15, night: dn.night, sunX: dn.sunX),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
-                SizedBox(width: 110, height: 80, child: ref.read(gameVisualsProvider).pumpjack(broken: p.broken)),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -12,6 +14,8 @@ import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/game_visuals.dart';
+import '../../core/visuals/landscape.dart';
+import '../../core/visuals/shaders.dart';
 import '../../core/widgets/effect_layer.dart';
 import '../site/tier_label.dart';
 import 'cross_section_painter.dart';
@@ -31,6 +35,8 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
   late final AnimationController _anim = AnimationController(vsync: this, duration: const Duration(seconds: 60))
     ..repeat();
   int _taps = 0;
+  bool _sawDrilling = false;
+  double? _resultAt;
 
   @override
   void dispose() {
@@ -80,67 +86,109 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: finished ? null : _onTap,
-        child: AnimatedBuilder(
-          animation: _anim,
-          builder: (context, _) {
-            final now = ref.read(clockProvider).nowMs();
-            final progress = finished ? 1.0 : Economy.drillProgress(parcel, now);
-            final depth = (progress * cfg.targetDepthM).floor();
-            final remaining = Duration(milliseconds: (parcel.drillCompleteMs - now).clamp(0, 1 << 31));
-            final time = _anim.lastElapsedDuration?.inMicroseconds.toDouble() ?? 0;
+        child: LayoutBuilder(
+          builder: (context, box) => AnimatedBuilder(
+            animation: _anim,
+            builder: (context, _) {
+              final now = ref.read(clockProvider).nowMs();
+              final progress = finished ? 1.0 : Economy.drillProgress(parcel, now);
+              final depth = (progress * cfg.targetDepthM).floor();
+              final remaining = Duration(milliseconds: (parcel.drillCompleteMs - now).clamp(0, 1 << 31));
+              final seconds = (_anim.lastElapsedDuration?.inMicroseconds ?? 0) / 1e6;
 
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: CrossSectionPainter(
-                      progress: progress,
-                      layers: cfg.geology,
-                      targetDepthM: cfg.targetDepthM,
-                      time: time / 1e6,
-                      skyTop: dayNight.skyTop,
-                      skyBottom: dayNight.skyBottom,
-                      outcome: outcome,
-                      lightsOn: dayNight.lightsOn,
+              // Sonuç anını işaretle: ekran açıkken bittiyse sahnelenir,
+              // önceden bitmişse doğrudan son hâli gösterilir.
+              if (!finished) {
+                _sawDrilling = true;
+                _resultAt = null;
+              } else {
+                _resultAt ??= _sawDrilling ? seconds : seconds - 100;
+              }
+              final since = _resultAt == null ? 0.0 : seconds - _resultAt!;
+              final oilRise = outcome == true ? (since / 1.4).clamp(0.0, 1.0) : 0.0;
+              final showGusher = outcome == true && since > 1.3;
+              final showCard = finished && since > (outcome == true ? 2.8 : 0.8);
+
+              // Ekran sarsıntısı: fışkırma anında güçlü, kuru kuyuda hafif.
+              var amp = 0.0;
+              if (outcome == true && since > 1.2 && since < 3.2) amp = 7 * (1 - (since - 1.2) / 2.0);
+              if (outcome == false && since < 0.5) amp = 3 * (1 - since / 0.5);
+              if (!finished && progress > 0) amp = 0.6;
+              final shake = Offset(sin(seconds * 93) * amp, cos(seconds * 71) * amp);
+              final surfaceH = box.maxHeight * CrossSectionPainter.surfaceFraction;
+
+              return Stack(
+                children: [
+                  Transform.translate(
+                    offset: shake,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: surfaceH + 2,
+                          child: const LandscapeBackdrop(seed: 3),
+                        ),
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: CrossSectionPainter(
+                              progress: progress,
+                              layers: cfg.geology,
+                              targetDepthM: cfg.targetDepthM,
+                              time: seconds,
+                              outcome: outcome,
+                              lightsOn: dayNight.lightsOn,
+                              night: dayNight.night,
+                              oilRise: oilRise,
+                              oilProgram: ref.read(shaderBankProvider).oilSheen,
+                            ),
+                          ),
+                        ),
+                        if (showGusher)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            height: surfaceH,
+                            child: IgnorePointer(
+                              child: ref
+                                  .read(gameVisualsProvider)
+                                  .gusher(origin: const Offset(0.5, 0.97), groundY: 0.985),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-                if (outcome == true)
                   Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    height: MediaQuery.sizeOf(context).height * 0.3,
-                    child: IgnorePointer(child: ref.read(gameVisualsProvider).gusher(origin: const Offset(0.5, 0.72))),
-                  ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: _DepthCounter(
-                    depth: depth,
-                    target: cfg.targetDepthM,
-                    layer: CrossSectionPainter.layerAt(cfg.geology, progress),
-                  ),
-                ),
-                if (!finished)
-                  Positioned(
-                    left: 12,
+                    top: 12,
                     right: 12,
-                    bottom: 16,
-                    child: _DrillStatus(parcel: parcel, progress: progress, remaining: remaining),
-                  ),
-                if (finished)
-                  // Ortada: alttaki Usta balonuyla çakışmasın.
-                  Align(
-                    alignment: const Alignment(0, 0.05),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _ResultCard(siteId: widget.siteId, parcel: parcel),
+                    child: _DepthCounter(
+                      depth: depth,
+                      target: cfg.targetDepthM,
+                      layer: CrossSectionPainter.layerAt(cfg.geology, progress),
                     ),
                   ),
-              ],
-            );
-          },
+                  if (!finished)
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 16,
+                      child: _DrillStatus(parcel: parcel, progress: progress, remaining: remaining),
+                    ),
+                  if (showCard)
+                    // Ortada: alttaki Usta balonuyla çakışmasın.
+                    Align(
+                      alignment: const Alignment(0, 0.05),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _ResultCard(siteId: widget.siteId, parcel: parcel),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -277,6 +325,7 @@ class _ResultCard extends ConsumerWidget {
             key: const Key('drill_result_ok'),
             style: FilledButton.styleFrom(
               backgroundColor: struck ? Palette.sunset : Palette.steel,
+              foregroundColor: Colors.white,
               minimumSize: const Size(220, 48),
             ),
             icon: Icon(struck ? Icons.precision_manufacturing : Icons.arrow_back),
