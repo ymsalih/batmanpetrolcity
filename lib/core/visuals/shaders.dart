@@ -77,6 +77,63 @@ class ShaderSlot {
   }
 }
 
+/// Pahalı bir shader çizimini bir kez görüntüye (ui.Image) dönüştürüp saklar.
+/// [key] değişmedikçe yeniden çizmez; böylece shader her karede değil,
+/// yalnızca görünüm gerçekten değiştiğinde çalışır.
+class ShaderImageCache {
+  Object? _key;
+  ui.Image? _image;
+
+  ui.Image? get image => _image;
+
+  /// Anahtar değiştiyse yeniden çizer. Yeni görüntü üretildiyse true döner;
+  /// eski görüntü [onReplaced] ile geri verilir (geçiş efekti için).
+  bool update({
+    required Object key,
+    required Size size,
+    required double pixelRatio,
+    required void Function(Canvas canvas, Size size) paint,
+    void Function(ui.Image old)? onReplaced,
+  }) {
+    if (key == _key && _image != null) return false;
+    if (size.isEmpty || !size.isFinite) return false;
+    _key = key;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)..scale(pixelRatio);
+    paint(canvas, size);
+    final picture = recorder.endRecording();
+    final img = picture.toImageSync(
+      max(1, (size.width * pixelRatio).ceil()),
+      max(1, (size.height * pixelRatio).ceil()),
+    );
+    picture.dispose();
+    final old = _image;
+    _image = img;
+    if (old != null) {
+      onReplaced != null ? onReplaced(old) : old.dispose();
+    }
+    return true;
+  }
+
+  void dispose() {
+    _image?.dispose();
+    _image = null;
+    _key = null;
+  }
+}
+
+/// Görüntüyü hedef dikdörtgene ölçekleyip çizer.
+void drawCachedImage(Canvas canvas, ui.Image image, Rect dst, {double opacity = 1}) {
+  canvas.drawImageRect(
+    image,
+    Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    dst,
+    Paint()
+      ..filterQuality = FilterQuality.medium
+      ..color = Color.fromRGBO(0, 0, 0, opacity),
+  );
+}
+
 /// Sürekli artan saniye değeri veren yardımcı mixin.
 mixin TimeTicker<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
   late final Ticker _timeTicker;

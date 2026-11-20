@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../config/game_config.dart';
 import '../../config/palette.dart';
 import 'day_night.dart';
 import 'painters/paint_kit.dart';
@@ -22,36 +23,139 @@ class LandscapeBackdrop extends ConsumerStatefulWidget {
   ConsumerState<LandscapeBackdrop> createState() => _LandscapeBackdropState();
 }
 
-class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with SingleTickerProviderStateMixin, TimeTicker {
+class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with SingleTickerProviderStateMixin {
+  /// Gün-gece döngüsü bu kadar dilime bölünür; manzara her dilimde bir kez
+  /// çizilir (8 dk'lık günde ~5 sn).
+  static const _slices = 96;
+
   final _slot = ShaderSlot();
+  final _cache = ShaderImageCache();
+  ui.Image? _previous;
+  late final AnimationController _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
+    ..value = 1
+    ..addStatusListener((s) {
+      if (s == AnimationStatus.completed) _dropPrevious();
+    });
+
+  void _dropPrevious() {
+    _previous?.dispose();
+    _previous = null;
+  }
 
   @override
   void dispose() {
+    _fade.dispose();
+    _dropPrevious();
+    _cache.dispose();
     _slot.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final dn = ref.watch(dayNightProvider);
     final program = ref.watch(shaderBankProvider).landscape;
-    if (program != null) {
-      // Premium yol: tüm manzara tek shader'da, üstünde canlı detaylar.
-      return RepaintBoundary(
-        child: CustomPaint(
-          size: Size.infinite,
-          painter: LandscapePainter(
+    if (program == null) {
+      return _FallbackLandscape(seed: widget.seed, parallax: widget.parallax);
+    }
+    // Yalnızca dilim değişince yeniden hesaplanır (saniyede bir build olsa da).
+    final slice = ref.watch(dayNightProvider.select((d) => (d.phase * _slices).floor()));
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        final size = box.biggest;
+        final dn = DayNight((slice + 0.5) / _slices);
+        final replaced = _cache.update(
+          key: (size, dpr, slice, widget.seed, widget.parallax),
+          size: size,
+          pixelRatio: dpr,
+          paint: (canvas, sz) => LandscapePainter(
             shader: _slot.of(program)!,
             dayNight: dn,
-            time: seconds,
+            // Bulutlar dilimden dilime ilerler; geçiş efekti kaymayı yumuşatır.
+            time: slice * GameConfig.dayLengthSeconds / _slices,
             seed: widget.seed.toDouble(),
             parallax: widget.parallax,
-          ),
-          foregroundPainter: _LifePainter(dn: dn, time: seconds, seed: widget.seed),
-        ),
-      );
-    }
-    // Yedek: gradyan gökyüzü + vektör tepeler.
+          ).paint(canvas, sz),
+          onReplaced: (old) {
+            _dropPrevious();
+            _previous = old;
+          },
+        );
+        if (replaced && _previous != null) _fade.forward(from: 0);
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: CustomPaint(
+                painter: _CachedImagePainter(current: _cache.image, previous: _previous, fade: _fade),
+              ),
+            ),
+            _LifeLayer(seed: widget.seed),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Önbellekteki manzara görüntüsünü, eskisinden yumuşak geçişle çizer.
+class _CachedImagePainter extends CustomPainter {
+  _CachedImagePainter({required this.current, required this.previous, required this.fade}) : super(repaint: fade);
+  final ui.Image? current;
+  final ui.Image? previous;
+  final Animation<double> fade;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dst = Offset.zero & size;
+    final prev = previous;
+    final cur = current;
+    if (prev != null && fade.value < 1) drawCachedImage(canvas, prev, dst);
+    if (cur != null) drawCachedImage(canvas, cur, dst, opacity: prev == null ? 1 : fade.value);
+  }
+
+  @override
+  bool shouldRepaint(_CachedImagePainter old) => old.current != current || old.previous != previous;
+}
+
+/// Ucuz, canlı vektör katmanı: kuşlar ve uzak at kafaları.
+class _LifeLayer extends ConsumerStatefulWidget {
+  const _LifeLayer({required this.seed});
+  final int seed;
+
+  @override
+  ConsumerState<_LifeLayer> createState() => _LifeLayerState();
+}
+
+class _LifeLayerState extends ConsumerState<_LifeLayer> with SingleTickerProviderStateMixin, TimeTicker {
+  @override
+  Widget build(BuildContext context) {
+    final dn = ref.watch(dayNightProvider);
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _LifePainter(dn: dn, time: seconds, seed: widget.seed),
+      ),
+    );
+  }
+}
+
+/// Shader yüklenemezse: gradyan gökyüzü + vektör tepeler.
+class _FallbackLandscape extends ConsumerStatefulWidget {
+  const _FallbackLandscape({required this.seed, required this.parallax});
+  final int seed;
+  final double parallax;
+
+  @override
+  ConsumerState<_FallbackLandscape> createState() => _FallbackLandscapeState();
+}
+
+class _FallbackLandscapeState extends ConsumerState<_FallbackLandscape>
+    with SingleTickerProviderStateMixin, TimeTicker {
+  @override
+  Widget build(BuildContext context) {
+    final dn = ref.watch(dayNightProvider);
     return Stack(
       fit: StackFit.expand,
       children: [

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,13 +40,29 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
   double? _resultAt;
   final _oilSlot = ShaderSlot();
   final _geoSlot = ShaderSlot();
+  final _geoCache = ShaderImageCache();
 
   @override
   void dispose() {
     _oilSlot.dispose();
+    _geoCache.dispose();
     _geoSlot.dispose();
     _anim.dispose();
     super.dispose();
+  }
+
+  /// Jeoloji yalnızca boyut veya gece tonu (20 kademe) değişince çizilir.
+  ui.Image? _geology(SiteConfig cfg, Size size, double night) {
+    final program = ref.read(shaderBankProvider).geology;
+    if (program == null || cfg.geology.length != 5) return null;
+    final n = (night * 20).round() / 20;
+    _geoCache.update(
+      key: (size, cfg.id, n, MediaQuery.devicePixelRatioOf(context)),
+      size: size,
+      pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      paint: (canvas, sz) => CrossSectionPainter.paintGeology(canvas, sz, _geoSlot.of(program)!, cfg.geology, n),
+    );
+    return _geoCache.image;
   }
 
   Parcel get _parcel => ref.read(gameControllerProvider).site(widget.siteId).parcels[widget.index];
@@ -146,7 +163,7 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
                               night: dayNight.night,
                               oilRise: oilRise,
                               oilShader: _oilSlot.of(ref.read(shaderBankProvider).oilSheen),
-                              geoShader: _geoSlot.of(ref.read(shaderBankProvider).geology),
+                              geoImage: _geology(cfg, Size(box.maxWidth, box.maxHeight), dayNight.night),
                             ),
                           ),
                         ),

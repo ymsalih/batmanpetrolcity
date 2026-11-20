@@ -26,7 +26,7 @@ class CrossSectionPainter extends CustomPainter {
     this.night = 0,
     this.oilRise = 0,
     this.oilShader,
-    this.geoShader,
+    this.geoImage,
   });
 
   final double progress;
@@ -43,8 +43,9 @@ class CrossSectionPainter extends CustomPainter {
   final double oilRise;
   final ui.FragmentShader? oilShader;
 
-  /// Gerçekçi kayaç dokuları (geology.frag). Yalnızca 5 katmanlı jeolojide.
-  final ui.FragmentShader? geoShader;
+  /// Önceden çizilmiş gerçekçi kayaç dokuları (bkz. [paintGeology]).
+  /// Her karede shader çalıştırmamak için önbellekten gelir.
+  final ui.Image? geoImage;
 
   static const surfaceFraction = 0.22;
 
@@ -63,6 +64,37 @@ class CrossSectionPainter extends CustomPainter {
       if (f <= acc + 1e-6) return l.name;
     }
     return layers.last.name;
+  }
+
+  /// Jeoloji shader'ını (geology.frag) çizer. Sonuç önbelleğe alınır;
+  /// yalnızca boyut veya gece tonu değişince yeniden çağrılır.
+  static void paintGeology(Canvas canvas, Size size, ui.FragmentShader shader, List<GeoLayer> layers, double night) {
+    if (layers.length != 5) return;
+    final total = layers.fold(0.0, (a, l) => a + l.thickness);
+    var acc = 0.0;
+    final cum = <double>[];
+    for (var k = 0; k < 4; k++) {
+      acc += layers[k].thickness / total;
+      cum.add(acc);
+    }
+    shader
+      ..setFloat(0, size.width)
+      ..setFloat(1, size.height)
+      ..setFloat(2, surfaceFraction)
+      ..setFloat(3, night)
+      ..setFloat(4, cum[0])
+      ..setFloat(5, cum[1])
+      ..setFloat(6, cum[2])
+      ..setFloat(7, cum[3]);
+    for (var k = 0; k < 5; k++) {
+      shader
+        ..setFloat(8 + k * 3, layers[k].color.r)
+        ..setFloat(9 + k * 3, layers[k].color.g)
+        ..setFloat(10 + k * 3, layers[k].color.b)
+        ..setFloat(23 + k, layers[k].pattern.index.toDouble());
+    }
+    final surfaceY = size.height * surfaceFraction;
+    canvas.drawRect(Rect.fromLTWH(0, surfaceY - 2, size.width, size.height - surfaceY + 2), Paint()..shader = shader);
   }
 
   @override
@@ -104,34 +136,8 @@ class CrossSectionPainter extends CustomPainter {
       return path;
     }
 
-    final geo = layers.length == 5 ? geoShader : null;
-    if (geo != null) {
-      var acc = 0.0;
-      final cum = <double>[];
-      for (var k = 0; k < 4; k++) {
-        acc += layers[k].thickness / total;
-        cum.add(acc);
-      }
-      geo
-        ..setFloat(0, w)
-        ..setFloat(1, h)
-        ..setFloat(2, surfaceFraction)
-        ..setFloat(3, night)
-        ..setFloat(4, cum[0])
-        ..setFloat(5, cum[1])
-        ..setFloat(6, cum[2])
-        ..setFloat(7, cum[3]);
-      for (var k = 0; k < 5; k++) {
-        geo
-          ..setFloat(8 + k * 3, layers[k].color.r)
-          ..setFloat(9 + k * 3, layers[k].color.g)
-          ..setFloat(10 + k * 3, layers[k].color.b);
-      }
-      for (var k = 0; k < 5; k++) {
-        geo.setFloat(23 + k, layers[k].pattern.index.toDouble());
-      }
-      canvas.drawRect(Rect.fromLTWH(0, surfaceY - 2, w, h - surfaceY + 2), Paint()..shader = geo);
-    }
+    final geo = layers.length == 5 ? geoImage : null;
+    if (geo != null) drawCachedImage(canvas, geo, Offset.zero & size);
 
     for (var i = 0; i < layers.length; i++) {
       final path = layerPath(i);
