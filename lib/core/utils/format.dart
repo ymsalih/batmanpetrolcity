@@ -15,12 +15,11 @@ abstract final class Fmt {
   /// 3.14159 → "3,14"
   static String decimal(num value, [int digits = 1]) => value.toStringAsFixed(digits).replaceAll('.', ',');
 
-  /// Büyük sayıları kısaltır: 12.345 → "12,3 B", 2.500.000 → "2,50 Mn".
+  /// Büyük sayıları kısaltır: 12.345 → "12.345", 2.500.000 → "2,50 Mn".
   static String compact(num value) {
     final v = value.abs();
     final sign = value < 0 ? '-' : '';
-    if (v < 10000) return '$sign${integer(v)}';
-    if (v < 1e6) return '$sign${decimal(v / 1e3, 1)} B';
+    if (v < 1e6) return '$sign${integer(v)}';
     if (v < 1e9) return '$sign${decimal(v / 1e6, 2)} Mn';
     return '$sign${decimal(v / 1e9, 2)} Mr';
   }
