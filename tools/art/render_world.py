@@ -212,4 +212,5 @@ def main():
     print('ok', WIDTH, res_y)
 
 
-main()
+if __name__ == '__main__':
+    main()

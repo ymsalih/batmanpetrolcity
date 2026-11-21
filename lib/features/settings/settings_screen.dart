@@ -175,6 +175,14 @@ class SettingsScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white54, fontSize: 12),
           ),
+          const SizedBox(height: 8),
+          const Text(
+            'Manzara ve harita gerçek arazi verisinden üretildi: Copernicus DEM GLO-30, '
+            '© DLR e.V. 2010-2014 ve © Airbus Defence and Space GmbH 2014-2018, '
+            'Avrupa Birliği Copernicus Programı. Gün doğumu ve batımı Batman\'ın gerçek saatini izler.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white38, fontSize: 11),
+          ),
         ],
       ),
     );

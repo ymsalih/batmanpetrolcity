@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../config/game_config.dart';
 import '../../config/palette.dart';
 import 'day_night.dart';
+import 'horizon.dart';
 import 'painters/paint_kit.dart';
 import 'shaders.dart';
 import '../ui/premium.dart';
@@ -15,6 +16,9 @@ import '../ui/premium.dart';
 /// katmanlı tepeler (paralaks) + süzülen kuşlar + uzaktaki kuleler.
 class LandscapeBackdrop extends ConsumerStatefulWidget {
   const LandscapeBackdrop({super.key, this.parallax = 0, this.seed = 0, this.phase});
+
+  /// Testlerde kapatılabilir (görüntü varlıkları yüklenmez).
+  static bool useRenderedHorizon = true;
 
   /// Sabit gün saati (0..1). Null ise oyunun gün-gece döngüsü kullanılır
   /// (ör. açılış sinematiğinde şafak/gece sahneleri için verilir).
@@ -58,6 +62,18 @@ class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with Sing
 
   @override
   Widget build(BuildContext context) {
+    // Gerçek Batman manzarası (render edilmiş fotoğraf kalitesinde görüntüler).
+    if (LandscapeBackdrop.useRenderedHorizon) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          HorizonBackdrop(phase: widget.phase, parallax: widget.parallax),
+          IgnorePointer(
+            child: _LifeLayer(seed: widget.seed, phase: widget.phase, birdsOnly: true),
+          ),
+        ],
+      );
+    }
     final program = ref.watch(shaderBankProvider).landscape;
     if (program == null) {
       return _FallbackLandscape(seed: widget.seed, parallax: widget.parallax);
@@ -129,9 +145,12 @@ class _CachedImagePainter extends CustomPainter {
 
 /// Ucuz, canlı vektör katmanı: kuşlar ve uzak at kafaları.
 class _LifeLayer extends ConsumerStatefulWidget {
-  const _LifeLayer({required this.seed, this.phase});
+  const _LifeLayer({required this.seed, this.phase, this.birdsOnly = false});
   final int seed;
   final double? phase;
+
+  /// Render edilmiş manzarada uzak kule siluetleri çizilmez, yalnızca kuşlar.
+  final bool birdsOnly;
 
   @override
   ConsumerState<_LifeLayer> createState() => _LifeLayerState();
@@ -144,7 +163,7 @@ class _LifeLayerState extends ConsumerState<_LifeLayer> with SingleTickerProvide
     final dn = widget.phase == null ? live : DayNight(widget.phase!);
     return RepaintBoundary(
       child: CustomPaint(
-        painter: _LifePainter(dn: dn, time: seconds, seed: widget.seed),
+        painter: _LifePainter(dn: dn, time: seconds, seed: widget.seed, birdsOnly: widget.birdsOnly),
       ),
     );
   }
@@ -224,10 +243,11 @@ class LandscapePainter extends CustomPainter {
 /// Manzaranın ön planındaki canlılık: bozkırda çalışan uzak at kafaları ve
 /// süzülen kuşlar.
 class _LifePainter extends CustomPainter {
-  _LifePainter({required this.dn, required this.time, required this.seed});
+  _LifePainter({required this.dn, required this.time, required this.seed, this.birdsOnly = false});
   final DayNight dn;
   final double time;
   final int seed;
+  final bool birdsOnly;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -235,7 +255,7 @@ class _LifePainter extends CustomPainter {
     final h = size.height;
     final rng = Random(seed + 21);
     final c = Color.lerp(const Color(0xFF2A211A), const Color(0xFF0C0F18), dn.night)!;
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < (birdsOnly ? 0 : 2); i++) {
       final x = w * (0.12 + rng.nextDouble() * 0.76);
       final y = h * 0.955;
       final s = h / 420;

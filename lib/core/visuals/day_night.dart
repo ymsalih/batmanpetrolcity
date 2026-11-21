@@ -7,10 +7,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/game_config.dart';
 import '../../config/palette.dart';
 import '../services/services.dart';
+import 'sun.dart';
 
 /// Gün-gece döngüsünün anlık durumu.
 class DayNight {
-  const DayNight(this.phase);
+  const DayNight(this.phase, {this.sun});
+
+  /// Gerçek güneş konumu (gerçek saat modunda); yoksa fazdan türetilir.
+  final SunPosition? sun;
+
+  SunPosition get sunPos => sun ?? SunPosition.fromPhase(phase);
 
   /// 0..1: 0 = gece yarısı, 0.25 = gün doğumu, 0.5 = öğle, 0.75 = gün batımı.
   final double phase;
@@ -65,14 +71,24 @@ final dayNightProvider = NotifierProvider<DayNightController, DayNight>(DayNight
 class DayNightController extends Notifier<DayNight> {
   @override
   DayNight build() {
-    final timer = Timer.periodic(const Duration(seconds: 4), (_) => state = _compute());
+    // Gerçek güneş yavaş ilerler: 30 sn'de bir güncellemek yeterli.
+    final timer = Timer.periodic(Duration(seconds: GameConfig.realTimeSun ? 30 : 4), (_) => state = _compute());
     ref.onDispose(timer.cancel);
     return _compute();
   }
 
   DayNight _compute() {
-    const len = GameConfig.dayLengthSeconds * 1000;
     final now = ref.read(clockProvider).nowMs();
+    if (GameConfig.realTimeSun) {
+      // Batman'ın gerçek güneşi: gün doğumu/batımı gerçek saatinde.
+      final sun = SunPosition.at(
+        DateTime.fromMillisecondsSinceEpoch(now, isUtc: true),
+        lat: GameConfig.batmanLat,
+        lon: GameConfig.batmanLon,
+      );
+      return DayNight(sun.dayPhase, sun: sun);
+    }
+    const len = GameConfig.dayLengthSeconds * 1000;
     // Oyun başlarken sabah olsun diye faz kaydırılır.
     return DayNight(((now % len) / len + 0.3) % 1.0);
   }

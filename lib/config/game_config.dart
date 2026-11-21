@@ -280,6 +280,14 @@ abstract final class GameConfig {
   // ---------------------------------------------------------- Gün / Gece
   static const int dayLengthSeconds = 8 * 60;
 
+  /// Gün-gece döngüsü Batman'ın gerçek güneşini izler (gerçek saatte gün
+  /// doğar/batar). Kapalıysa [dayLengthSeconds] uzunluğunda oyun günü.
+  static const bool realTimeSun = true;
+
+  /// Batman şehir merkezi (güneş hesabı için).
+  static const double batmanLat = 37.887;
+  static const double batmanLon = 41.132;
+
   // ------------------------------------------------------------- Jeoloji
   static const List<GeoLayer> defaultGeology = [
     GeoLayer('Toprak', Color(0xFF8B5A2B), 0.12, GeoPattern.soil),

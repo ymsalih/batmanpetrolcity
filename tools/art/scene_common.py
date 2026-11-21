@@ -71,3 +71,73 @@ def principled(name, color, roughness=0.6, metallic=0.0):
     b.inputs['Roughness'].default_value = roughness
     b.inputs['Metallic'].default_value = metallic
     return m
+
+
+# ---------------------------------------------------------------------------
+# Gün içi ışık ön ayarları (Batman, ~37.9° K). Azimut pusula açısı (0 = kuzey,
+# 90 = doğu); gökyüzü fiziksel atmosfer simülasyonuyla (çoklu saçılma).
+LIGHTING = {
+    'safak': dict(az=96, el=3.5, sun=(1.0, 0.52, 0.28), strength=2.6, sky=0.10, exposure=0.35),
+    'gunduz': dict(az=215, el=46, sun=(1.0, 0.95, 0.88), strength=3.4, sky=0.10, exposure=-1.25),
+    'aksam': dict(az=262, el=2.8, sun=(1.0, 0.45, 0.22), strength=2.8, sky=0.10, exposure=0.4),
+    'gece': dict(az=140, el=38, sun=(0.55, 0.66, 1.0), strength=0.22, sky=0.0, exposure=1.1, night=True),
+}
+
+
+def sun_vector(az_deg, el_deg):
+    from mathutils import Vector
+
+    a, e = math.radians(az_deg), math.radians(el_deg)
+    return Vector((math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e)))
+
+
+def apply_lighting(scene, key):
+    """Güneş lambası + fiziksel gökyüzü; gece için ay ışığı, alacakaranlık
+    gökyüzü ve yıldızlar."""
+    from mathutils import Vector
+
+    L = LIGHTING[key]
+    for ob in list(scene.collection.objects):
+        if ob.type == 'LIGHT':
+            bpy.data.objects.remove(ob)
+    sun = bpy.data.lights.new('gunes', 'SUN')
+    sun.energy = L['strength']; sun.color = L['sun']; sun.angle = math.radians(0.6 if L.get('night') else 1.2)
+    so = bpy.data.objects.new('gunes', sun)
+    so.rotation_mode = 'QUATERNION'
+    so.rotation_quaternion = Vector((0, 0, -1)).rotation_difference(-sun_vector(L['az'], L['el']))
+    scene.collection.objects.link(so)
+
+    world = bpy.data.worlds.new('dunya_' + key)
+    world.use_nodes = True
+    nt = world.node_tree
+    bg = nt.nodes['Background']
+    sky = nt.nodes.new('ShaderNodeTexSky')
+    sky.sky_type = 'MULTIPLE_SCATTERING'
+    sky.sun_disc = True
+    sky.sun_size = math.radians(0.8)
+    sky.sun_intensity = 0.35
+    if L.get('night'):
+        # Mavi saat sonrası: güneş ufkun altında, çok sönük gök + yıldızlar
+        sky.sun_elevation = math.radians(-7)
+        sky.sun_rotation = math.radians(290)
+        sky.sun_disc = False
+        vor = nt.nodes.new('ShaderNodeTexVoronoi'); vor.inputs['Scale'].default_value = 420
+        vor.feature = 'F1'
+        rng = nt.nodes.new('ShaderNodeMapRange')
+        rng.inputs['From Min'].default_value = 0.0; rng.inputs['From Max'].default_value = 0.035
+        rng.inputs['To Min'].default_value = 1.0; rng.inputs['To Max'].default_value = 0.0
+        nt.links.new(vor.outputs['Distance'], rng.inputs['Value'])
+        mix = nt.nodes.new('ShaderNodeMix'); mix.data_type = 'RGBA'; mix.blend_type = 'ADD'
+        nt.links.new(rng.outputs['Result'], mix.inputs['Factor'])
+        nt.links.new(sky.outputs['Color'], mix.inputs[6])
+        mix.inputs[7].default_value = (0.9, 0.92, 1.0, 1)
+        nt.links.new(mix.outputs[2], bg.inputs['Color'])
+        bg.inputs['Strength'].default_value = 0.9
+    else:
+        sky.sun_elevation = math.radians(L['el'])
+        sky.sun_rotation = math.radians(L['az'])
+        nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
+        bg.inputs['Strength'].default_value = L['sky']
+    scene.world = world
+    scene.view_settings.exposure = L['exposure']
+    return L
