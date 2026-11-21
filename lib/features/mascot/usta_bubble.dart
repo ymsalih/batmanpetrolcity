@@ -30,7 +30,7 @@ class UstaBubble extends ConsumerWidget {
           ),
         )
         .animate(key: ValueKey(msg.id))
-        .slideY(begin: 0.6, end: 0, duration: 260.ms, curve: Curves.easeOutBack)
+        .slideY(begin: -0.6, end: 0, duration: 260.ms, curve: Curves.easeOutBack)
         .fadeIn(duration: 200.ms);
   }
 }

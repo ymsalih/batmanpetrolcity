@@ -6,7 +6,7 @@
     "background_color": "#14110F",
     "theme_color": "#F07A2A",
     "description": "Batman'ın petrol kimliğini konu alan idle/tycoon oyunu.",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

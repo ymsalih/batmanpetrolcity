@@ -17,6 +17,7 @@ import '../mascot/usta_bubble.dart';
 import '../mascot/usta_controller.dart';
 import '../chat/chat_screen.dart';
 import 'worker_avatar.dart';
+import '../../core/ui/responsive.dart';
 
 /// Ekip ekranı: işçiler, görevleri, rütbeleri; işe alma ve terfi.
 class CrewScreen extends ConsumerWidget {
@@ -30,7 +31,7 @@ class CrewScreen extends ConsumerWidget {
     return PremiumBackdrop(
       seed: 19,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, pad.bottom + 16),
+        padding: EdgeInsets.fromLTRB(Responsive.hPad(context), pad.top + 8, Responsive.hPad(context), pad.bottom + 16),
         children: [
           const _CrewSummary(),
           const SectionHeader('Ekibin'),
@@ -125,7 +126,9 @@ class _CrewSummary extends ConsumerWidget {
                       children: [
                         Icon(icon, size: 14, color: Palette.success),
                         const SizedBox(width: 4),
-                        Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Flexible(
+                          child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        ),
                       ],
                     ),
                   ),
@@ -303,9 +306,13 @@ class _RankBadge extends StatelessWidget {
         children: [
           for (var i = 0; i <= rank; i++) const Icon(Icons.star, size: 10, color: Color(0xFF3A2508)),
           const SizedBox(width: 4),
-          Text(
-            title,
-            style: const TextStyle(color: Color(0xFF3A2508), fontWeight: FontWeight.w900, fontSize: 11),
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFF3A2508), fontWeight: FontWeight.w900, fontSize: 11),
+            ),
           ),
         ],
       ),

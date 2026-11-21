@@ -7,6 +7,7 @@ import 'core/game/game_controller.dart';
 import 'core/navigation.dart';
 import 'core/services/services.dart';
 import 'core/ui/premium.dart';
+import 'core/ui/responsive.dart';
 import 'core/visuals/painters/paint_kit.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
@@ -68,13 +69,15 @@ class PetrolAgasiApp extends StatelessWidget {
       ),
       // Efekt katmanı ve Usta balonu Navigator'ın üstünde: tüm ekranlarda görünür.
       builder: (context, child) => _GraphicsScope(
-        child: EffectLayer(
-          child: Stack(
-            children: [
-              child!,
-              const Positioned.fill(child: _HeatLayer()),
-              const Positioned(left: 8, right: 8, bottom: 88, child: UstaBubble()),
-            ],
+        child: TextScaleClamp(
+          child: EffectLayer(
+            child: Stack(
+              children: [
+                child!,
+                const Positioned.fill(child: _HeatLayer()),
+                const _UstaBubbleSlot(),
+              ],
+            ),
           ),
         ),
       ),
@@ -165,9 +168,15 @@ class _GameShellState extends ConsumerState<GameShell> {
               ),
             ),
           ),
-          const Positioned(top: 0, left: 0, right: 0, child: GameHud()),
-          Positioned(top: ShellMetrics.hud(context), left: 12, right: 12, child: const EffectsBar()),
-          const Positioned(left: 0, right: 0, bottom: 0, child: GlassNavBar()),
+          // Tablette üst bilgi ve alt menü içerik genişliğinde ortalanır.
+          const Positioned(top: 0, left: 0, right: 0, child: ResponsiveCenter(child: GameHud())),
+          Positioned(
+            top: ShellMetrics.hud(context),
+            left: 12,
+            right: 12,
+            child: const ResponsiveCenter(child: EffectsBar()),
+          ),
+          const Positioned(left: 0, right: 0, bottom: 0, child: ResponsiveCenter(child: GlassNavBar())),
           if (!tutorialDone) const Positioned.fill(child: TutorialOverlay()),
           if (hasOfflineReport && tutorialDone) const Positioned.fill(child: OfflineReportOverlay()),
         ],
@@ -190,6 +199,20 @@ class _HeatLayer extends ConsumerWidget {
     if (!active) return const SizedBox.shrink();
     return const HeatHazeOverlay(strength: 1);
   }
+}
+
+/// Usta'nın konuşma balonu üst bilginin hemen altında durur: her ekran
+/// boyutunda ve yazı büyüklüğünde parselleri ve butonları kapatmaz.
+class _UstaBubbleSlot extends StatelessWidget {
+  const _UstaBubbleSlot();
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: 8,
+    right: 8,
+    top: ShellMetrics.hud(context) + 4,
+    child: const ResponsiveCenter(child: UstaBubble()),
+  );
 }
 
 /// Oyuncunun grafik ayarını alt ağaca iletir.

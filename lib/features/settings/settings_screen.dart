@@ -9,6 +9,7 @@ import '../../core/services/services.dart';
 import '../../core/ui/premium.dart';
 import '../../core/ui/premium_backdrop.dart';
 import '../../core/utils/format.dart';
+import '../../core/ui/responsive.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -25,7 +26,7 @@ class SettingsScreen extends ConsumerWidget {
     return PremiumBackdrop(
       seed: 17,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, pad.bottom + 16),
+        padding: EdgeInsets.fromLTRB(Responsive.hPad(context), pad.top + 8, Responsive.hPad(context), pad.bottom + 16),
         children: [
           _section('Ayarlar'),
           Card(

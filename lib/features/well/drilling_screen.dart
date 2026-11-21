@@ -118,8 +118,8 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
           ),
         ),
         flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: QualityBlur(
+            sigma: 14,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

@@ -257,22 +257,27 @@ class _NavItem extends StatelessWidget {
                 : null,
             boxShadow: selected ? [BoxShadow(color: Palette.sunset.withValues(alpha: 0.5), blurRadius: 14)] : null,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: selected ? Colors.white : Colors.white60, size: 24)
-                  .animate(target: selected ? 1 : 0)
-                  .scale(begin: const Offset(1, 1), end: const Offset(1.12, 1.12), duration: 200.ms),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
-                  color: selected ? Colors.white : Colors.white60,
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          // Büyük yazı tipinde veya dar ekranda etiket kutuya sığacak kadar küçülür.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: selected ? Colors.white : Colors.white60, size: 24)
+                    .animate(target: selected ? 1 : 0)
+                    .scale(begin: const Offset(1, 1), end: const Offset(1.12, 1.12), duration: 200.ms),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+                    color: selected ? Colors.white : Colors.white60,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

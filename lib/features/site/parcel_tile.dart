@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -79,17 +81,20 @@ class ParcelTile extends ConsumerWidget {
     switch (p.status) {
       case ParcelStatus.empty:
         return [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(p.surveyed ? Icons.add_location_alt : Icons.search, color: Colors.white70, size: 28),
-                const SizedBox(height: 4),
-                Text(
-                  p.surveyed ? 'Sondaja hazır' : 'Boş parsel',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
-                ),
-              ],
+          // İçerik kutu boyutuyla orantılı: küçük telefonda küçülür, tablette büyür.
+          _TileLabel(
+            child: FittedBox(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(p.surveyed ? Icons.add_location_alt : Icons.search, color: Colors.white70, size: 28),
+                  const SizedBox(height: 4),
+                  Text(
+                    p.surveyed ? 'Sondaja hazır' : 'Boş parsel',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           ),
           if (p.surveyed) Positioned(right: 4, top: 4, child: TierLabel(tier: p.tier, compact: true)),
@@ -106,16 +111,18 @@ class ParcelTile extends ConsumerWidget {
 
       case ParcelStatus.dry:
         return [
-          const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.block, color: Colors.white70, size: 26),
-                Text(
-                  'Kuru kuyu',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                ),
-              ],
+          const _TileLabel(
+            child: FittedBox(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.block, color: Colors.white70, size: 26),
+                  Text(
+                    'Kuru kuyu',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ),
         ];
@@ -143,6 +150,9 @@ class ParcelTile extends ConsumerWidget {
             bottom: 3,
             child: Text(
               '${Fmt.compact(p.stored.floor())}/${Fmt.compact(cap)}',
+              maxLines: 1,
+              overflow: TextOverflow.fade,
+              softWrap: false,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: full ? Palette.sunsetLight : Colors.white,
@@ -176,19 +186,21 @@ class ParcelTile extends ConsumerWidget {
               child: Container(
                 color: Palette.danger.withValues(alpha: 0.35),
                 alignment: Alignment.center,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.build,
-                      color: Colors.white,
-                      size: 26,
-                    ).animate(onPlay: (c) => c.repeat(reverse: true)).rotate(begin: -0.05, end: 0.05, duration: 300.ms),
-                    Text(
-                      'Tamir ${p.repairProgress}/${GameConfig.repairTaps}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.build, color: Colors.white, size: 26)
+                          .animate(onPlay: (c) => c.repeat(reverse: true))
+                          .rotate(begin: -0.05, end: 0.05, duration: 300.ms),
+                      Text(
+                        'Tamir ${p.repairProgress}/${GameConfig.repairTaps}',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -300,4 +312,18 @@ class _FullGlow extends StatelessWidget {
       ),
     ).animate(onPlay: (c) => c.repeat(reverse: true)).fadeOut(duration: 700.ms);
   }
+}
+
+/// Parsel kutusunun ortasındaki simge + yazı alanı: kutunun belli bir oranını
+/// kaplar (en fazla ~1.8 kat büyür), böylece her ekranda dengeli görünür.
+class _TileLabel extends StatelessWidget {
+  const _TileLabel({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) => Center(
+      child: SizedBox(width: min(c.maxWidth * 0.62, 120), height: min(c.maxHeight * 0.46, 90), child: child),
+    ),
+  );
 }

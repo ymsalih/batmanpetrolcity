@@ -523,40 +523,52 @@ class _CinematicIntroState extends ConsumerState<CinematicIntro> with TickerProv
       left: 22,
       right: 22,
       bottom: pad.bottom + 34,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Premium.goldText(yearText, size: c.year == null ? 30 : 60, spacing: c.year == null ? 4 : 2),
-          const SizedBox(height: 2),
-          Text(
-            Fmt.upperTr(c.title),
-            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 3),
-          ),
-          const SizedBox(height: 10),
-          Row(
+      // Geniş ekranda (tablet yatay, masaüstü) satırlar okunaklı uzunlukta kalsın.
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 620),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(width: 36, height: 36, child: UstaAvatar()),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  shown,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    height: 1.4,
-                    shadows: [Shadow(blurRadius: 8, color: Colors.black)],
-                  ),
+              Premium.goldText(yearText, size: c.year == null ? 30 : 60, spacing: c.year == null ? 4 : 2),
+              const SizedBox(height: 2),
+              Text(
+                Fmt.upperTr(c.title),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3,
                 ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(width: 36, height: 36, child: UstaAvatar()),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      shown,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        height: 1.4,
+                        shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Opacity(
+                opacity: t > _typingEnd ? 0.6 : 0,
+                child: const Text('Devam etmek için dokun', style: TextStyle(color: Colors.white70, fontSize: 12)),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Opacity(
-            opacity: t > _typingEnd ? 0.6 : 0,
-            child: const Text('Devam etmek için dokun', style: TextStyle(color: Colors.white70, fontSize: 12)),
-          ),
-        ],
+        ),
       ),
     );
   }

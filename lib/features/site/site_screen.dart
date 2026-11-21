@@ -12,6 +12,7 @@ import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/ui/premium.dart';
+import '../../core/ui/responsive.dart';
 import '../../core/visuals/animated_paint.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
@@ -44,10 +45,9 @@ class SiteScreen extends ConsumerWidget {
           ),
         ),
         SafeArea(
-          child: Column(
-            children: [
-              // Saha seçici
-              SizedBox(
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final chips = SizedBox(
                 height: 52,
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -71,31 +71,70 @@ class SiteScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
-              _SiteHeader(cfg: cfg),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: GridView.count(
-                        crossAxisCount: GameConfig.gridSize,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                        physics: const NeverScrollableScrollPhysics(),
+              );
+              // Kare parsel ızgarası; mevcut alana göre en büyük kare.
+              final grid = Center(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: GridView.count(
+                    crossAxisCount: GameConfig.gridSize,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      for (var i = 0; i < GameConfig.gridSize * GameConfig.gridSize; i++)
+                        ParcelTile(key: ValueKey('$siteId-$i'), siteId: siteId, index: i),
+                    ],
+                  ),
+                ),
+              );
+
+              // Yatay ekran (tablet yatay, masaüstü, geniş pencere): solda
+              // kontroller, sağda ekran yüksekliğinde kare ızgara.
+              if (box.maxWidth > box.maxHeight * 1.15) {
+                final panelW = (box.maxWidth * 0.4).clamp(260.0, 400.0);
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: panelW,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (var i = 0; i < GameConfig.gridSize * GameConfig.gridSize; i++)
-                            ParcelTile(key: ValueKey('$siteId-$i'), siteId: siteId, index: i),
+                          chips,
+                          _SiteHeader(cfg: cfg, compact: box.maxHeight < 600),
+                          const Spacer(),
+                          const _CollectAllButton(),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
-                  ),
+                    Expanded(
+                      child: Padding(padding: const EdgeInsets.fromLTRB(8, 8, 12, 8), child: grid),
+                    ),
+                  ],
+                );
+              }
+
+              return ResponsiveCenter(
+                // Tablette ızgara çok büyümesin: dikeyde de içerik genişliği.
+                maxWidth: Responsive.contentMaxWidth + 80,
+                child: Column(
+                  children: [
+                    chips,
+                    _SiteHeader(cfg: cfg, compact: box.maxHeight < 600),
+                    Expanded(
+                      child: Padding(
+                        // Kısa ekranlarda ızgaraya daha çok yer kalsın.
+                        padding: EdgeInsets.fromLTRB(12, box.maxHeight < 560 ? 4 : 8, 12, box.maxHeight < 560 ? 6 : 12),
+                        child: grid,
+                      ),
+                    ),
+                    const _CollectAllButton(),
+                    SizedBox(height: box.maxHeight < 560 ? 4 : 8),
+                  ],
                 ),
-              ),
-              const _CollectAllButton(),
-              const SizedBox(height: 8),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -150,8 +189,11 @@ class _SiteBackground extends StatelessWidget {
 }
 
 class _SiteHeader extends ConsumerWidget {
-  const _SiteHeader({required this.cfg});
+  const _SiteHeader({required this.cfg, this.compact = false});
   final SiteConfig cfg;
+
+  /// Kısa ekranda başlık küçülür, açıklama tek satıra iner: parsellere yer kalsın.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -174,8 +216,10 @@ class _SiteHeader extends ConsumerWidget {
               children: [
                 Text(
                   cfg.name,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: compact ? 20 : 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                     shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
@@ -183,6 +227,8 @@ class _SiteHeader extends ConsumerWidget {
                 ),
                 Text(
                   cfg.description,
+                  maxLines: compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,

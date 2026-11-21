@@ -13,6 +13,7 @@ import '../../core/utils/format.dart';
 import '../../core/widgets/effect_layer.dart';
 import '../mascot/usta_controller.dart';
 import 'price_chart_painter.dart';
+import '../../core/ui/responsive.dart';
 
 class MarketScreen extends ConsumerWidget {
   const MarketScreen({super.key});
@@ -33,7 +34,7 @@ class MarketScreen extends ConsumerWidget {
     return PremiumBackdrop(
       seed: 13,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, pad.bottom + 16),
+        padding: EdgeInsets.fromLTRB(Responsive.hPad(context), pad.top + 8, Responsive.hPad(context), pad.bottom + 16),
         children: [
           // Fiyat kartı
           _Card(

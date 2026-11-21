@@ -135,6 +135,23 @@ enum GraphicsLevel {
       i == null || i < 0 || i >= values.length ? GraphicsLevel.balanced : values[i];
 }
 
+/// Arkasını bulanıklaştıran katman; yalnızca Yüksek grafik kalitesinde
+/// gerçek bulanıklık uygular (BackdropFilter telefonda çok pahalıdır).
+class QualityBlur extends StatelessWidget {
+  const QualityBlur({super.key, required this.sigma, required this.child});
+  final double sigma;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!GraphicsMode.of(context).blur) return child;
+    return BackdropFilter(
+      filter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+      child: child,
+    );
+  }
+}
+
 /// Oyuncunun grafik seviyesini alt ağaca iletir.
 class GraphicsMode extends InheritedWidget {
   const GraphicsMode({super.key, required this.level, required super.child});

@@ -118,10 +118,21 @@ HUD'daki sohbet ikonundan açılan **Saha Grubu**, Usta ve ekibin yazıştığı
 
 ## Mobil öncelik
 
-- Dikey ekran kilidi, kenardan kenara çizim, şeffaf durum çubuğu (Android/iOS); web manifest'te `portrait-primary`.
+- Telefonda dikey kilit; tablette (en kısa kenar ≥ 600) her yön serbest. Kenardan kenara çizim, şeffaf durum çubuğu.
 - Tüm butonlarda en az 48 dp dokunma alanı (kuyu ayar ikonu 40x40'a büyütüldü).
 - Ayarlar → **Grafik kalitesi**: *Pil tasarrufu* (15 fps, az parçacık), *Dengeli* (30 fps, varsayılan) ve *Yüksek* (60 fps, bulanıklık, bulut gölgeleri).
 - Pahalı shader'lar önbelleklenir; uzun listelerdeki cam kartlar bulanıklık kullanmaz.
+
+### Her cihaza uyum (responsive)
+
+- `lib/core/ui/responsive.dart`: cihaz sınıfları (dar telefon, kısa ekran, tablet, yatay), `ResponsiveCenter`, `TextScaleClamp`, `showResponsiveSheet`.
+- **Tablet/masaüstü:** üst bilgi, alt menü ve listeler (Ekip, Pazar, Ayarlar, Sohbet) 640 pt genişlikte ortalanır; arka plan tam ekran kalır.
+- **Yatay ekran:** Saha ekranında solda kontrol paneli, sağda ekran yüksekliğinde kare parsel ızgarası.
+- **Küçük telefon (320 pt):** saha başlığı sıkışık hâle geçer; parsel içerikleri kutu boyutuyla orantılı küçülür/büyür.
+- **Yazı büyüklüğü:** sistem ayarı 0.85–1.3 arasında uygulanır; alt menü etiketleri sığacak kadar küçülür.
+- Usta'nın balonu üst bilginin altında durur: hiçbir ekranda parselleri kapatmaz.
+- Alt sayfalar uzun içerikte kaydırılır, tablette 560 pt genişlikte ortalanır.
+- `test/responsive_test.dart`: 9 cihaz senaryosunda (320x568'den 1440x900'e, büyük yazı tipi, yatay) tüm sekmeler, sohbet ve parsel sayfası taşmasız açılır.
 
 ### Performans (telefonda donma/ısınmaya karşı)
 

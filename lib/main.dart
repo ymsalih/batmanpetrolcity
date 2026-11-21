@@ -13,9 +13,14 @@ import 'core/visuals/shaders.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Mobil öncelikli: dikey ekran, kenardan kenara, şeffaf durum çubuğu.
+  // Mobil öncelikli: telefonda dikey kilit; tablette (en kısa kenar ≥ 600)
+  // her yön serbest, düzen yatay ekrana uyum sağlar. Kenardan kenara çizim.
   if (!kIsWeb) {
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final shortest = view.physicalSize.shortestSide / view.devicePixelRatio;
+    await SystemChrome.setPreferredOrientations(
+      shortest >= 600 ? DeviceOrientation.values : [DeviceOrientation.portraitUp],
+    );
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
   SystemChrome.setSystemUIOverlayStyle(

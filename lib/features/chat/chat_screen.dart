@@ -1,4 +1,5 @@
-import 'dart:ui' as ui;
+import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ import '../crew/worker_avatar.dart';
 import '../mascot/usta_avatar.dart';
 import 'chat_director.dart';
 import 'chat_topics.dart';
+import '../../core/ui/responsive.dart';
 
 /// Saha Grubu: Usta ve ekibin yazıştığı grup sohbeti.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -41,7 +43,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void deactivate() {
-    ref.read(chatOpenProvider.notifier).set(false);
+    // Ağaç kurulurken sağlayıcı değiştirilemez: çizim bitince kapat.
+    final open = ref.read(chatOpenProvider.notifier);
+    scheduleMicrotask(() => open.set(false));
     super.deactivate();
   }
 
@@ -78,7 +82,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: ListView.builder(
                   reverse: true,
-                  padding: EdgeInsets.fromLTRB(10, pad.top + kToolbarHeight + 12, 10, 8),
+                  padding: EdgeInsets.fromLTRB(
+                    Responsive.hPad(context, 10),
+                    pad.top + kToolbarHeight + 12,
+                    Responsive.hPad(context, 10),
+                    8,
+                  ),
                   itemCount: chat.length + (typing != null ? 1 : 0),
                   itemBuilder: (context, i) {
                     if (typing != null) {
@@ -117,8 +126,8 @@ class _GroupAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final morale = ref.watch(gameControllerProvider.select((s) => s.morale));
     final label = ref.watch(gameControllerProvider.select((s) => s.moraleLabel));
     return ClipRect(
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+      child: QualityBlur(
+        sigma: 16,
         child: AppBar(
           backgroundColor: Colors.black.withValues(alpha: 0.45),
           elevation: 0,
@@ -200,7 +209,8 @@ class _MessageRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final time = DateTime.fromMillisecondsSinceEpoch(msg.timeMs);
     final hhmm = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-    final maxW = MediaQuery.sizeOf(context).width * 0.74;
+    // Geniş ekranda balonlar okunaklı genişlikte kalsın.
+    final maxW = min(MediaQuery.sizeOf(context).width, Responsive.contentMaxWidth) * 0.74;
 
     if (msg.speaker == ChatSpeaker.system) {
       return Padding(
@@ -387,10 +397,10 @@ class _BottomPanel extends ConsumerWidget {
     final director = ref.read(chatDirectorProvider.notifier);
 
     return ClipRect(
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+      child: QualityBlur(
+        sigma: 14,
         child: Container(
-          padding: EdgeInsets.fromLTRB(10, 10, 10, pad.bottom + 10),
+          padding: EdgeInsets.fromLTRB(Responsive.hPad(context, 10), 10, Responsive.hPad(context, 10), pad.bottom + 10),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.45),
             border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
@@ -469,9 +479,10 @@ class _BottomPanel extends ConsumerWidget {
 
 /// Bir işçiyle birebir sohbet penceresi (ekip kartından açılır).
 Future<void> showPersonalChat(BuildContext context, Worker w) {
-  return showModalBottomSheet(
+  return showResponsiveSheet(
     context: context,
-    isScrollControlled: true,
+    // Kendi kaydırılan mesaj listesi var.
+    scrollable: false,
     builder: (_) => _PersonalChat(workerId: w.id),
   );
 }

@@ -13,13 +13,13 @@ import '../../core/ui/premium.dart';
 import '../mascot/usta_controller.dart';
 import '../well/drilling_screen.dart';
 import 'tier_label.dart';
+import '../../core/ui/responsive.dart';
 
 /// Boş veya kuru parsel için işlemler: etüt, sondaj, temizlik.
 Future<void> showParcelSheet(BuildContext context, String siteId, int index) {
-  return showModalBottomSheet(
+  return showResponsiveSheet(
     context: context,
     backgroundColor: Palette.panel,
-    showDragHandle: true,
     builder: (_) => ParcelSheet(siteId: siteId, index: index),
   );
 }

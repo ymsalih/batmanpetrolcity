@@ -15,14 +15,13 @@ import '../../core/visuals/game_visuals.dart';
 import '../../core/visuals/landscape.dart';
 import '../mascot/usta_controller.dart';
 import '../site/tier_label.dart';
+import '../../core/ui/responsive.dart';
 
 /// Üretimdeki kuyunun ayrıntıları ve yükseltmeleri.
 Future<void> showWellSheet(BuildContext context, String siteId, int index) {
-  return showModalBottomSheet(
+  return showResponsiveSheet(
     context: context,
     backgroundColor: Palette.panel,
-    showDragHandle: true,
-    isScrollControlled: true,
     builder: (_) => WellSheet(siteId: siteId, index: index),
   );
 }
