@@ -9,6 +9,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../config/palette.dart';
 import '../../core/game/game_controller.dart';
 import '../../core/ui/premium.dart';
+import '../../core/visuals/day_night.dart';
+import '../../core/visuals/horizon.dart';
 import '../../core/visuals/landscape.dart';
 import '../../core/visuals/painters/derrick_painter.dart';
 import 'cinematic.dart';
@@ -34,6 +36,18 @@ class _IntroGateState extends ConsumerState<IntroGate> {
   void initState() {
     super.initState();
     _timer = Timer(widget.duration, _close);
+  }
+
+  bool _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Manzarayı ilk karede çözmeye başla: açılış ekranı boş kalmasın.
+    if (!_precached && LandscapeBackdrop.useRenderedHorizon) {
+      _precached = true;
+      HorizonBackdrop.precacheFor(context, ref.read(dayNightProvider).sunPos);
+    }
   }
 
   void _close() {

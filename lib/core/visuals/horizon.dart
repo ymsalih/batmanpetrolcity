@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -11,7 +13,7 @@ import 'sun.dart';
 /// Her karede çizim yok: görüntüler bir kez çözülür, geçiş yalnızca
 /// saydamlıkla yapılır (güneş 30 sn'de bir güncellenir).
 class HorizonBackdrop extends ConsumerWidget {
-  const HorizonBackdrop({super.key, this.phase, this.parallax = 0, this.alignY = -0.05});
+  const HorizonBackdrop({super.key, this.phase, this.parallax = 0, this.horizonAt});
 
   /// Sabit gün fazı (sinematik sahneler); null ise gerçek güneş.
   final double? phase;
@@ -19,10 +21,38 @@ class HorizonBackdrop extends ConsumerWidget {
   /// -1..1 yatay kaydırma.
   final double parallax;
 
-  /// Dikey hizalama: ufkun ekrandaki yeri.
-  final double alignY;
+  /// Ufuk çizgisinin kutudaki yeri (0 üst, 1 alt). Null: kutu oranına göre
+  /// (geniş şeritte aşağıda, dik ekranda ortanın biraz üstünde).
+  final double? horizonAt;
 
   static const _dir = 'assets/game/horizon';
+  static const _sourceWidth = 1440;
+  static const _sourceHeight = 1152;
+
+  /// Panoramada ufuk çizgisinin satırı (render'dan: horizon.json).
+  static const _horizonRow = 475;
+
+  static ImageProvider provider(String key, int decodeH) =>
+      ResizeImage(AssetImage('$_dir/$key.jpg'), height: decodeH, policy: ResizeImagePolicy.fit);
+
+  /// Uygulama açılırken o anki güneşe uyan görüntüleri önceden çözer.
+  static Future<void> precacheFor(BuildContext context, SunPosition sun) async {
+    final mq = MediaQuery.of(context);
+    final h = (mq.size.height * mq.devicePixelRatio).clamp(256.0, _sourceHeight.toDouble()).round();
+    for (final e in weights(sun).entries) {
+      if (e.value > 0.004) await precacheImage(provider(e.key, h), context);
+    }
+  }
+
+  /// Ufku kutuda istenen yere getiren dikey hizalama (cover sığdırmada).
+  static double alignFor(Size box, double target) {
+    final s = max(box.width / _sourceWidth, box.height / _sourceHeight);
+    final ih = _sourceHeight * s;
+    if (ih <= box.height + 0.5) return 0;
+    final top = target * box.height - _horizonRow / _sourceHeight * ih;
+    return (-2 * top / (ih - box.height) - 1).clamp(-1.0, 1.0);
+  }
+
   static const keys = ['gece', 'safak', 'gunduz', 'aksam'];
 
   /// Güneşe göre her görüntünün ağırlığı (toplam 1).
@@ -45,12 +75,6 @@ class HorizonBackdrop extends ConsumerWidget {
     };
   }
 
-  static void precache(BuildContext context) {
-    for (final k in keys) {
-      precacheImage(AssetImage('$_dir/$k.jpg'), context);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final SunPosition sun;
@@ -61,7 +85,21 @@ class HorizonBackdrop extends ConsumerWidget {
       sun = ref.watch(dayNightProvider.select((d) => d.sunPos));
     }
     final w = weights(sun);
-    final align = Alignment(parallax.clamp(-1.0, 1.0) * 0.6, alignY);
+    final mq = MediaQuery.of(context);
+    return LayoutBuilder(
+      builder: (context, box) {
+        final size = box.biggest;
+        final target = horizonAt ?? (size.width > size.height ? 0.72 : 0.42);
+        final align = Alignment(parallax.clamp(-1.0, 1.0) * 0.6, alignFor(size, target));
+        // Bellek: görüntü kutuyu kaplayacak kadar küçük çözülür (1440 px yerine).
+        final scale = max(size.width / _sourceWidth, size.height / _sourceHeight);
+        final decodeH = (_sourceHeight * scale * mq.devicePixelRatio).clamp(256.0, _sourceHeight.toDouble()).round();
+        return _layers(w, align, decodeH);
+      },
+    );
+  }
+
+  Widget _layers(Map<String, double> w, Alignment align, int decodeH) {
     // Ağırlıklar katman katman: önce tam opak taban, üstüne normalize saydamlık.
     final layers = <Widget>[];
     var acc = 0.0;
@@ -74,12 +112,21 @@ class HorizonBackdrop extends ConsumerWidget {
         Opacity(
           key: ValueKey(k),
           opacity: opacity,
-          child: Image.asset(
-            '$_dir/$k.jpg',
+          child: Image(
+            image: provider(k, decodeH),
             fit: BoxFit.cover,
             alignment: align,
             gaplessPlayback: true,
             filterQuality: FilterQuality.medium,
+            // Hazır olunca yumuşakça belirir (ani parlama yok).
+            frameBuilder: (context, child, frame, sync) => sync
+                ? child
+                : AnimatedOpacity(
+                    opacity: frame == null ? 0 : 1,
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOut,
+                    child: child,
+                  ),
           ),
         ),
       );
