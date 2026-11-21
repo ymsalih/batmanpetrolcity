@@ -17,8 +17,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 A = os.path.join(HERE, '..', '..', 'assets', 'game')
 SITE = sys.argv[1] if len(sys.argv) > 1 else 'raman'
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, 'out', f'preview_{SITE}.mp4')
-W, H, FPS, DUR = 720, 1280, 24, 14.0
-S = 2.0  # arka plan büyütmesi (oyundaki gibi): 20 px/m
+W, H, FPS, DUR = 720, 1280, 24, 16.0
+S = 1.15  # arka plan büyütmesi
+# Oyun okunurluğu için küçük nesneler büyütülür (tycoon oyunlarındaki gibi)
+EXAG = {'worker': 2.3, 'minibus': 1.6, 'tanker': 1.4, 'pumpjack': 1.3, 'derrick': 1.0, 'derrick_block': 1.0}
 
 man = json.load(open(os.path.join(A, 'manifest.json')))
 site = man['sites'][SITE]
@@ -35,7 +37,7 @@ def frames(name, file=None):
     m = man[name]
     img = Image.open(os.path.join(A, file or m['file'])).convert('RGBA')
     fw, fh = m['frame']
-    k = SCREEN_PX_PER_M / m['pxPerM']
+    k = SCREEN_PX_PER_M / m['pxPerM'] * EXAG.get(name, 1.0)
     out = []
     cols = m['cols']; count = m.get('count', cols * m.get('rows', 1))
     for i in range(count):
@@ -74,16 +76,34 @@ def path_pos(pts, t):
 
 parcels = [P(p) for p in site['parcels']]
 road_end, gate, meeting = P(site['roadEnd']), P(site['gate']), P(site['meeting'])
-pumps = {0: 0.0, 2: 0.35, 3: 0.6, 5: 0.15, 6: 0.8, 8: 0.45}
+pumps = {0: 0.0, 1: 0.35, 3: 0.6, 5: 0.15, 6: 0.8, 8: 0.45}
 rig = 4
-bus_stop = meeting + np.array([-120, 40])
+tracks = [np.array(t, float) * S for t in site.get('tracks', [])]
+bus_stop = meeting + np.array([-70, 14])
 bus_path = [road_end + np.array([0, 120]), road_end, gate, bus_stop]
+
+
+def track_to(target):
+    """Toplanma alanından hedef pede giden toprak yol (ağaç yapısında zincirlenir)."""
+    if not tracks:
+        return [meeting, target]
+    chain = []
+    goal = target
+    for _ in range(9):
+        t = min(tracks[:-1], key=lambda tr: np.linalg.norm(tr[-1] - goal))
+        chain = list(t) + chain
+        start = t[0]
+        if np.linalg.norm(start - meeting) < 60 * S:
+            break
+        goal = start
+    return [meeting] + chain + [target]
 crew = ['sondor', 'derikmen', 'isci', 'muhendis', 'mekanik', 'isci']
-circle = [meeting + np.array([math.cos(a) * 70, math.sin(a) * 36]) for a in np.linspace(0, 2 * math.pi, len(crew), endpoint=False)]
+circle = [meeting + np.array([math.cos(a) * 34, math.sin(a) * 18]) for a in np.linspace(0, 2 * math.pi, len(crew), endpoint=False)]
 rig_anchor = parcels[rig]
 dm = man['derrick']
 vdoor = rig_anchor + (np.array(dm['vdoor']) - np.array(dm['anchor'])) * (SCREEN_PX_PER_M / dm['pxPerM'])
-work_spots = [vdoor + np.array([(i - 2.5) * 26, 20 + (i % 2) * 18]) for i in range(len(crew))]
+walk_route = track_to(vdoor)
+work_spots = [vdoor + np.array([(i - 2.5) * 16, 10 + (i % 2) * 10]) for i in range(len(crew))]
 
 
 def draw(canvas, img, pos, anchor_scaled, cam):
@@ -95,8 +115,8 @@ def draw(canvas, img, pos, anchor_scaled, cam):
 
 def render_frame(t):
     # Kamera: girişten pedin ortasına süzülür, sonra hafifçe kuleye yaklaşır
-    c0 = gate + np.array([0, -200]); c1 = (parcels[4] + parcels[7]) / 2
-    cam_c = c0 + (c1 - c0) * ease(t / 7.0)
+    c0 = meeting + np.array([0, -300]); c2 = rig_anchor + np.array([0, -60])
+    cam_c = c0 + (c2 - c0) * ease((t - 7.5) / 7.0)
     cam = cam_c - np.array([W / 2, H / 2])
     cam = np.clip(cam, [0, 0], [bg.width - W, bg.height - H])
     canvas = bg.crop((int(cam[0]), int(cam[1]), int(cam[0]) + W, int(cam[1]) + H)).copy()
@@ -139,10 +159,17 @@ def render_frame(t):
         elif t < 9.0:
             u = 1.0; a, b = circle[i], circle[i]
         else:
-            u = ease((t - 9.0) / 3.5); a, b = circle[i], work_spots[i]
-        pos = a + (b - a) * u
-        moving = 0 < u < 1 and np.linalg.norm(b - a) > 1
-        v = (b - a) if moving else (meeting - pos if t < 9.0 else rig_anchor - pos)
+            u = None
+        if u is not None:
+            pos = a + (b - a) * u
+            moving = 0 < u < 1 and np.linalg.norm(b - a) > 1
+            v = (b - a) if moving else meeting - pos
+        else:
+            # Toprak yolu izleyerek kuleye yürür
+            k = min(max((t - 9.0 - i * 0.2) / 4.5, 0), 1)
+            route = np.array([circle[i]] + walk_route[1:-1] + [work_spots[i]])
+            pos, v = path_pos(route, k)
+            moving = 0 < k < 1
         d8 = dir_index(v, 8)
         fr = int(t * 10) % wm['walkFrames'] if moving else wm['idleFrame']
         items.append((pos[1], sheet[d8 * wm['cols'] + fr], pos, np.array(wm['anchor']) * k))

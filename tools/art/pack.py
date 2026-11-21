@@ -139,7 +139,9 @@ def pack_sprites():
             mk = np.clip(k[..., 3] * k[..., :3].max(-1), 0, 1)[..., None]
             out = b.copy()
             # Beyaz baretin ışığını koru, rengi role göre çarp
-            out[..., :3] = b[..., :3] * (1 - mk) + (b[..., :3] * (0.25 + 0.75 * tint_lin) ** (1 / 2.2)) * mk
+            # Beyaz baretin gölgelemesini koru, rengi role göre çarp (lineer ışıkta)
+            shade = b[..., :3] ** 2.2
+            out[..., :3] = b[..., :3] * (1 - mk) + ((shade * (0.06 + 0.94 * tint_lin)) ** (1 / 2.2)) * mk
             frames.append(out[box[1]:box[3], box[0]:box[2]])
         size = save_webp(sheet(frames, n), os.path.join(DST, 'sprites', f'worker_{role}.webp'))
     manifest['worker'] = {'file': 'sprites/worker_{role}.webp', 'frame': [box[2] - box[0], box[3] - box[1]],

@@ -164,7 +164,7 @@ def frame_camera(scene, bounds_min, bounds_max, pad=0.6):
     cx = (max(xs) + min(xs)) / 2; cy = (max(ys) + min(ys)) / 2
     res_x = int(math.ceil(w * PX_PER_M / 2) * 2); res_y = int(math.ceil(h * PX_PER_M / 2) * 2)
     center = right * cx + up * cy
-    cam = sc2.ortho_camera(scene, tuple(center), res_x / PX_PER_M, res_x, res_y, distance=80)
+    cam = sc2.ortho_camera(scene, tuple(center), res_x / PX_PER_M, res_x, res_y, distance=500)
     if res_y > res_x:
         cam.data.sensor_fit = 'VERTICAL'
         cam.data.ortho_scale = res_y / PX_PER_M
