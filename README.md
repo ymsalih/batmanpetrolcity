@@ -120,8 +120,18 @@ HUD'daki sohbet ikonundan açılan **Saha Grubu**, Usta ve ekibin yazıştığı
 
 - Dikey ekran kilidi, kenardan kenara çizim, şeffaf durum çubuğu (Android/iOS); web manifest'te `portrait-primary`.
 - Tüm butonlarda en az 48 dp dokunma alanı (kuyu ayar ikonu 40x40'a büyütüldü).
-- Ayarlar → **Pil tasarrufu (düşük grafik)**: bulanıklık, bulut gölgeleri ve fışkırma parçacıkları azalır.
+- Ayarlar → **Grafik kalitesi**: *Pil tasarrufu* (15 fps, az parçacık), *Dengeli* (30 fps, varsayılan) ve *Yüksek* (60 fps, bulanıklık, bulut gölgeleri).
 - Pahalı shader'lar önbelleklenir; uzun listelerdeki cam kartlar bulanıklık kullanmaz.
+
+### Performans (telefonda donma/ısınmaya karşı)
+
+- **Kare hızı sınırı:** sürekli animasyonlar (`FrameThrottle` mixin'i, `AnimatedPaint`) grafik seviyesinin fps'iyle yeniden çizilir. Ekran 60/120 Hz olsa da Dengeli modda 30 fps'i geçmez.
+- **Gizli sekmeler durur:** `IndexedStack` içindeki her ekran `TickerMode` ile sarılıdır. Görünmeyen sekmenin hiçbir animasyonu çalışmaz.
+- **Boşta çizim yok:** duran veya arızalı at kafası ve göz kırpmayan işçi/Usta avatarları yeniden çizilmez (`frameKey`).
+- **Shader'lar görüntüye çizilir:** Impeller, shader içeren resmi her karede GPU'da yeniden hesaplar. Bu yüzden toprak, manzara ve jeoloji bir kez `ui.Image`'a çizilir; piksel oranı grafik seviyesiyle sınırlanır (bellek).
+- **Bulanıklık yalnızca Yüksek'te:** `MaskFilter` ve `BackdropFilter` yerine ucuz radyal gradyan gölgeler kullanılır (`PaintKit.highQuality`). Motor titreşimi, buton parıltısı ve bulut gölgeleri de yalnızca bu modda açıktır.
+- **Gün-gece döngüsü 4 sn'de bir** güncellenir; saha ekranı ve parseller ışığı kademeli izler, tüm ekran her saniye yeniden kurulmaz.
+- **Ses:** tüm efektler 4 yerel oynatıcılık ortak bir havuzu paylaşır (önceden ses başına 4 oynatıcı açılıyordu, Android'de çökme riski vardı). Ortam döngüsü bir kez üretilir.
 - Güvenli alanlar (çentik, alt çubuk) içerik boşluklarına dahildir; 360 px genişlikte test edildi.
 
 ## Ses

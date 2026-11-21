@@ -436,7 +436,7 @@ class GameController extends Notifier<GameState> {
 
   void setSound(bool v) => state = state.copyWith(soundEnabled: v);
 
-  void setLowGraphics(bool v) => state = state.copyWith(lowGraphics: v);
+  void setGraphicsLevel(int v) => state = state.copyWith(graphicsLevel: v.clamp(0, 2));
 
   void setIntroSeen(bool v) => state = state.copyWith(introSeen: v);
 

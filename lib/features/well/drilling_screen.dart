@@ -33,9 +33,7 @@ class DrillingScreen extends ConsumerStatefulWidget {
   ConsumerState<DrillingScreen> createState() => _DrillingScreenState();
 }
 
-class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _anim = AnimationController(vsync: this, duration: const Duration(seconds: 60))
-    ..repeat();
+class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTickerProviderStateMixin, FrameThrottle {
   int _taps = 0;
   bool _sawDrilling = false;
   double? _resultAt;
@@ -48,9 +46,12 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
     _oilSlot.dispose();
     _geoCache.dispose();
     _geoSlot.dispose();
-    _anim.dispose();
     super.dispose();
   }
+
+  /// Büyük önbellek görüntüsünün piksel oranı grafik seviyesiyle sınırlı (bellek).
+  double get _pixelRatio =>
+      MediaQuery.devicePixelRatioOf(context).clamp(1.0, GraphicsMode.of(context).maxPixelRatio).toDouble();
 
   /// Jeoloji yalnızca boyut veya gece tonu (20 kademe) değişince çizilir.
   ui.Image? _geology(SiteConfig cfg, Size size, double night) {
@@ -58,9 +59,9 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
     if (program == null || cfg.geology.length != 5) return null;
     final n = (night * 20).round() / 20;
     _geoCache.update(
-      key: (size, cfg.id, n, MediaQuery.devicePixelRatioOf(context)),
+      key: (size, cfg.id, n, _pixelRatio),
       size: size,
-      pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      pixelRatio: _pixelRatio,
       paint: (canvas, sz) => CrossSectionPainter.paintGeology(canvas, sz, _geoSlot.of(program)!, cfg.geology, n),
     );
     return _geoCache.image;
@@ -136,14 +137,12 @@ class _DrillingScreenState extends ConsumerState<DrillingScreen> with SingleTick
         behavior: HitTestBehavior.opaque,
         onTapDown: finished ? null : _onTap,
         child: LayoutBuilder(
-          builder: (context, box) => AnimatedBuilder(
-            animation: _anim,
-            builder: (context, _) {
+          builder: (context, box) => Builder(
+            builder: (context) {
               final now = ref.read(clockProvider).nowMs();
               final progress = finished ? 1.0 : Economy.drillProgress(parcel, now);
               final depth = (progress * cfg.targetDepthM).floor();
               final remaining = Duration(milliseconds: (parcel.drillCompleteMs - now).clamp(0, 1 << 31));
-              final seconds = (_anim.lastElapsedDuration?.inMicroseconds ?? 0) / 1e6;
 
               // Sonuç anını işaretle: ekran açıkken bittiyse sahnelenir,
               // önceden bitmişse doğrudan son hâli gösterilir.

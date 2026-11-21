@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../config/game_config.dart';
 import '../../config/palette.dart';
 import '../../core/visuals/day_night.dart';
+import '../../core/visuals/painters/paint_kit.dart';
 
 /// Batman'ın stilize haritası: Raman Dağı silüeti, Batman Çayı, Dicle,
 /// şehir, yollar ve rafineri. Gece şehir ve rafineri ışıkları yanar.
@@ -179,7 +180,7 @@ class MapPainter extends CustomPainter {
         22,
         Paint()
           ..color = Palette.sunsetLight.withValues(alpha: 0.35)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+          ..maskFilter = PaintKit.blur(10),
       );
       canvas.drawCircle(sun, 13, Paint()..color = Color.lerp(const Color(0xFFFFF0B3), Palette.sunset, dn.dusk)!);
     }
@@ -283,7 +284,7 @@ class MapPainter extends CustomPainter {
       // Gece ışıkları
       final glow = Paint()
         ..color = Palette.lamp.withValues(alpha: 0.9)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+        ..maskFilter = PaintKit.blur(3);
       const lights = [
         Offset(-24, -16),
         Offset(-6, -16),
@@ -305,7 +306,7 @@ class MapPainter extends CustomPainter {
         40,
         Paint()
           ..color = Palette.lamp.withValues(alpha: active ? 0.12 : 0.05)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
+          ..maskFilter = PaintKit.blur(20),
       );
     }
   }

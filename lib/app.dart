@@ -7,6 +7,7 @@ import 'core/game/game_controller.dart';
 import 'core/navigation.dart';
 import 'core/services/services.dart';
 import 'core/ui/premium.dart';
+import 'core/visuals/painters/paint_kit.dart';
 import 'core/visuals/shaders.dart';
 import 'core/widgets/effect_layer.dart';
 import 'core/widgets/hud.dart';
@@ -150,7 +151,17 @@ class _GameShellState extends ConsumerState<GameShell> {
               data: mq.copyWith(padding: contentPadding),
               child: IndexedStack(
                 index: tab.index,
-                children: const [MapScreen(), SiteScreen(), CrewScreen(), MarketScreen(), SettingsScreen()],
+                // Görünmeyen sekmelerin animasyonları durdurulur (CPU/pil).
+                children: [
+                  for (final (i, screen) in const [
+                    MapScreen(),
+                    SiteScreen(),
+                    CrewScreen(),
+                    MarketScreen(),
+                    SettingsScreen(),
+                  ].indexed)
+                    TickerMode(enabled: i == tab.index, child: screen),
+                ],
               ),
             ),
           ),
@@ -188,7 +199,9 @@ class _GraphicsScope extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final low = ref.watch(gameControllerProvider.select((s) => s.lowGraphics));
-    return GraphicsMode(low: low, child: child);
+    final level = ref.watch(gameControllerProvider.select((s) => s.graphicsLevel));
+    final g = GraphicsLevel.fromIndex(level);
+    PaintKit.highQuality = g.detail;
+    return GraphicsMode(level: g, child: child);
   }
 }

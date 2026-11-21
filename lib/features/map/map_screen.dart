@@ -12,6 +12,7 @@ import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/ui/premium.dart';
+import '../../core/visuals/animated_paint.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
 import '../mascot/usta_controller.dart';
@@ -24,16 +25,7 @@ class MapScreen extends ConsumerStatefulWidget {
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _anim = AnimationController(vsync: this, duration: const Duration(seconds: 60))
-    ..repeat();
-
-  @override
-  void dispose() {
-    _anim.dispose();
-    super.dispose();
-  }
-
+class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final dn = ref.watch(dayNightProvider);
@@ -63,21 +55,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
               child: const SoilView(seed: 2, base: Color(0xFFB88B5C), scale: 1.4),
             ),
             Positioned.fill(
-              child: RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: _anim,
-                  builder: (_, _) => CustomPaint(
-                    painter: MapPainter(
-                      dayNight: dn,
-                      unlocked: unlockedSet,
-                      time: _anim.value * 60,
-                      skyFromShader: true,
-                    ),
-                    foregroundPainter: GraphicsMode.isLow(context)
-                        ? null
-                        : CloudShadowPainter(time: _anim.value * 60, night: dn.night, top: MapPainter.horizon),
-                  ),
-                ),
+              child: AnimatedPaint(
+                painter: (t) => MapPainter(dayNight: dn, unlocked: unlockedSet, time: t, skyFromShader: true),
+                // Bulut gölgeleri yalnızca yüksek kalitede (bulanıklık pahalı).
+                foregroundPainter: GraphicsMode.of(context).detail
+                    ? (t) => CloudShadowPainter(time: t, night: dn.night, top: MapPainter.horizon)
+                    : null,
               ),
             ),
             for (final site in GameConfig.sites)

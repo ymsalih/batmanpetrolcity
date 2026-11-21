@@ -67,7 +67,7 @@ class GameState {
     this.workers = const [],
     this.nextWorkerId = 1,
     this.nextAutoCollectMs = 0,
-    this.lowGraphics = false,
+    this.graphicsLevel = 1,
     this.playerName,
     this.chat = const [],
     this.chatUnread = 0,
@@ -124,7 +124,8 @@ class GameState {
   final int nextAutoCollectMs;
 
   /// Pil/performans için düşük grafik modu.
-  final bool lowGraphics;
+  /// Grafik seviyesi: 0 pil tasarrufu, 1 dengeli, 2 yüksek.
+  final int graphicsLevel;
 
   /// Oyuncunun adı (ileride kullanıcı adı). İşçiler bu adla hitap eder.
   final String? playerName;
@@ -220,7 +221,7 @@ class GameState {
     List<Worker>? workers,
     int? nextWorkerId,
     int? nextAutoCollectMs,
-    bool? lowGraphics,
+    int? graphicsLevel,
     String? playerName,
     bool clearPlayerName = false,
     List<ChatMessage>? chat,
@@ -254,7 +255,7 @@ class GameState {
       workers: workers ?? this.workers,
       nextWorkerId: nextWorkerId ?? this.nextWorkerId,
       nextAutoCollectMs: nextAutoCollectMs ?? this.nextAutoCollectMs,
-      lowGraphics: lowGraphics ?? this.lowGraphics,
+      graphicsLevel: graphicsLevel ?? this.graphicsLevel,
       playerName: clearPlayerName ? null : (playerName ?? this.playerName),
       chat: chat ?? this.chat,
       chatUnread: chatUnread ?? this.chatUnread,
@@ -288,7 +289,7 @@ class GameState {
     'wk': workers.map((w) => w.toJson()).toList(),
     'nw': nextWorkerId,
     'nac': nextAutoCollectMs,
-    'lg': lowGraphics,
+    'gq': graphicsLevel,
     if (playerName != null) 'pn': playerName,
     'ch': chat.map((m) => m.toJson()).toList(),
     'cu': chatUnread,
@@ -335,7 +336,8 @@ class GameState {
           .toList(),
       nextWorkerId: (j['nw'] as num?)?.toInt() ?? 1,
       nextAutoCollectMs: (j['nac'] as num?)?.toInt() ?? 0,
-      lowGraphics: j['lg'] as bool? ?? false,
+      // Eski kayıtlarda yalnızca 'düşük grafik' anahtarı vardı.
+      graphicsLevel: (j['gq'] as num?)?.toInt() ?? ((j['lg'] as bool? ?? false) ? 0 : 1),
       playerName: j['pn'] as String?,
       chat: ((j['ch'] as List?) ?? const [])
           .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e as Map)))

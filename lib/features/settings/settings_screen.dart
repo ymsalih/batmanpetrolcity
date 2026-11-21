@@ -50,13 +50,30 @@ class SettingsScreen extends ConsumerWidget {
                   value: s.hapticsEnabled,
                   onChanged: ctrl.setHaptics,
                 ),
-                SwitchListTile(
-                  key: const Key('low_graphics'),
-                  title: const Text('Pil tasarrufu (düşük grafik)'),
-                  subtitle: const Text('Bulanıklık, bulut gölgeleri ve parçacıklar azalır'),
-                  secondary: const Icon(Icons.battery_saver),
-                  value: s.lowGraphics,
-                  onChanged: ctrl.setLowGraphics,
+                ListTile(
+                  leading: const Icon(Icons.speed),
+                  title: const Text('Grafik kalitesi'),
+                  subtitle: Text(switch (s.graphicsLevel) {
+                    0 => 'Saniyede 15 kare, az parçacık. Eski telefonlar ve pil için.',
+                    2 => 'Saniyede 60 kare, bulanıklık ve gölgeler. Güçlü telefonlar için.',
+                    _ => 'Saniyede 30 kare, bulanıklık kapalı. Çoğu telefon için önerilen.',
+                  }),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: SegmentedButton<int>(
+                    key: const Key('graphics_level'),
+                    segments: [
+                      for (final l in GraphicsLevel.values)
+                        ButtonSegment(
+                          value: l.index,
+                          label: FittedBox(child: Text(l.label)),
+                        ),
+                    ],
+                    selected: {s.graphicsLevel},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (v) => ctrl.setGraphicsLevel(v.first),
+                  ),
                 ),
                 SwitchListTile(
                   title: const Text('Ses efektleri'),

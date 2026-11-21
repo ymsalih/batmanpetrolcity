@@ -70,7 +70,7 @@ class RefineryPainter extends CustomPainter {
       if (night > 0.4) {
         final glow = Paint()
           ..color = Palette.lamp
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+          ..maskFilter = PaintKit.blur(3);
         var i = 0;
         for (var y = top + 18; y < ground - 8; y += 26, i++) {
           final blink = 0.6 + 0.4 * sin(time * 2.2 + i + x);

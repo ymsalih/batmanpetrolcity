@@ -84,14 +84,41 @@ abstract final class PaintKit {
     );
   }
 
-  /// Yumuşak, bulanık zemin gölgesi.
+  /// Yüksek grafik kalitesi açık mı? Kapalıyken pahalı MaskFilter
+  /// bulanıklıkları ve ince titreşimler çizilmez (grafik ayarından gelir).
+  static bool highQuality = false;
+
+  /// Yüksek kalitede bulanıklık filtresi, aksi hâlde null (filtre yok).
+  static MaskFilter? blur(double sigma) => highQuality ? MaskFilter.blur(BlurStyle.normal, sigma) : null;
+
+  /// Yumuşak zemin gölgesi. Yüksek kalite dışında bulanıklık yerine ucuz
+  /// bir radyal gradyan kullanılır.
   static void softShadow(Canvas canvas, Rect r, {double opacity = 0.35, double blur = 5}) {
-    canvas.drawOval(
-      r,
+    if (highQuality) {
+      canvas.drawOval(
+        r,
+        Paint()
+          ..color = Colors.black.withValues(alpha: opacity)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, blur),
+      );
+      return;
+    }
+    final grown = r.inflate(blur * 0.8);
+    canvas.save();
+    canvas.translate(grown.center.dx, grown.center.dy);
+    canvas.scale(1, grown.height / grown.width);
+    canvas.drawCircle(
+      Offset.zero,
+      grown.width / 2,
       Paint()
-        ..color = Colors.black.withValues(alpha: opacity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, blur),
+        ..shader = ui.Gradient.radial(
+          Offset.zero,
+          grown.width / 2,
+          [Colors.black.withValues(alpha: opacity), Colors.black.withValues(alpha: opacity * 0.6), Colors.transparent],
+          const [0, 0.55, 1],
+        ),
     );
+    canvas.restore();
   }
 
   /// Küresel gölgelendirilmiş daire (yatak, göbek, damla).

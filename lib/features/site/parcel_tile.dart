@@ -30,8 +30,9 @@ class ParcelTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final parcel = ref.watch(gameControllerProvider.select((s) => s.site(siteId).parcels[index]));
-    final night = ref.watch(dayNightProvider.select((d) => d.night));
-    final sunX = ref.watch(dayNightProvider.select((d) => d.sunX));
+    // Kademeli: kutucuklar her saniye değil, ışık gözle görülür değişince kurulur.
+    final night = ref.watch(dayNightProvider.select((d) => (d.night * 20).round() / 20));
+    final sunX = ref.watch(dayNightProvider.select((d) => (d.sunX * 10).round() / 10));
     final cfg = GameConfig.site(siteId);
 
     return GestureDetector(

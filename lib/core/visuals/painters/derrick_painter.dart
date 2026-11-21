@@ -257,7 +257,7 @@ class DerrickPainter extends CustomPainter {
         5,
         Paint()
           ..color = const Color(0xFFFF3B30).withValues(alpha: 0.35)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+          ..maskFilter = PaintKit.blur(3),
       );
     }
 
@@ -265,7 +265,7 @@ class DerrickPainter extends CustomPainter {
     if (lightsOn) {
       final glow = Paint()
         ..color = Palette.lamp.withValues(alpha: 0.9)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+        ..maskFilter = PaintKit.blur(1.5);
       for (var i = 1; i < levels; i += 2) {
         final t = i / levels;
         canvas.drawCircle(Offset.lerp(lb, lt, t)!, 1.3, glow);

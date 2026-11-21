@@ -115,10 +115,26 @@ class _CinematicIntroState extends ConsumerState<CinematicIntro> with TickerProv
   @override
   void initState() {
     super.initState();
-    _clock = createTicker((d) => setState(() => _time = d.inMicroseconds / 1e6))..start();
+    _clock = createTicker(_onClock)..start();
     _scene = _makeController();
     _scene.forward();
     _sound(SoundCue.whoosh);
+  }
+
+  Duration _lastFrame = Duration.zero;
+  Duration _interval = GraphicsLevel.balanced.frameInterval;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _interval = GraphicsMode.of(context).frameInterval;
+  }
+
+  /// Sinematik saati grafik seviyesinin kare hızıyla ilerler (15/30/60 fps).
+  void _onClock(Duration d) {
+    if (d - _lastFrame < _interval) return;
+    _lastFrame = d;
+    setState(() => _time = d.inMicroseconds / 1e6);
   }
 
   AnimationController _makeController() {
@@ -182,9 +198,9 @@ class _CinematicIntroState extends ConsumerState<CinematicIntro> with TickerProv
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _tap,
-        child: AnimatedBuilder(
-          animation: _scene,
-          builder: (context, _) {
+        // Sahne ilerlemesi her vsync'te değil, kare sınırlı saatle çizilir.
+        child: Builder(
+          builder: (context) {
             final t = _scene.value;
             return Stack(
               fit: StackFit.expand,

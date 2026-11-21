@@ -11,9 +11,13 @@ import 'synth.dart';
 class SynthAudioService implements AudioService {
   SynthAudioService();
 
-  /// Her ses için küçük bir oynatıcı havuzu: hızlı ardışık dokunuşlar
-  /// birbirini kesmesin.
+  /// Tüm efektlerin paylaştığı küçük oynatıcı havuzu. Her yerel oynatıcı
+  /// telefonda bellek ve bir ses kanalı tutar; Android'de çok sayıda açmak
+  /// çökmeye yol açabilir. 4 eşzamanlı efekt fazlasıyla yeterli.
   static const _poolSize = 4;
+
+  /// Aynı efekt bu süreden sık tetiklenirse atlanır (hızlı dokunuşlar).
+  static const _minGapMs = 45;
 
   static const _volumes = {
     SoundCue.tap: 0.35,
@@ -32,8 +36,10 @@ class SynthAudioService implements AudioService {
     SoundCue.chime: 0.45,
   };
 
-  final _pools = <SoundCue, List<AudioPlayer>>{};
-  final _next = <SoundCue, int>{};
+  final _pool = <AudioPlayer>[];
+  var _next = 0;
+  final _lastPlayed = <SoundCue, int>{};
+  Uint8List? _ambientBytes;
   AudioPlayer? _ambient;
   bool _ambientWanted = false;
   bool _ambientPlaying = false;
@@ -50,13 +56,12 @@ class SynthAudioService implements AudioService {
 
   Future<void> _play(SoundCue cue) async {
     try {
-      final pool = _pools.putIfAbsent(
-        cue,
-        () => List.generate(_poolSize, (_) => AudioPlayer()..setReleaseMode(ReleaseMode.stop)),
-      );
-      final i = _next[cue] ?? 0;
-      _next[cue] = (i + 1) % pool.length;
-      final player = pool[i];
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - (_lastPlayed[cue] ?? 0) < _minGapMs) return;
+      _lastPlayed[cue] = now;
+      if (_pool.length < _poolSize) _pool.add(AudioPlayer()..setReleaseMode(ReleaseMode.stop));
+      final player = _pool[_next % _pool.length];
+      _next = (_next + 1) % _poolSize;
       await player.stop();
       await player.play(BytesSource(Synth.wav(cue), mimeType: 'audio/wav'), volume: _volumes[cue] ?? 0.5);
     } catch (e) {
@@ -81,7 +86,8 @@ class SynthAudioService implements AudioService {
     _ambientPlaying = true;
     try {
       final p = _ambient ??= AudioPlayer()..setReleaseMode(ReleaseMode.loop);
-      await p.play(BytesSource(Synth.ambientLoop(), mimeType: 'audio/wav'), volume: 0.16);
+      final bytes = _ambientBytes ??= Synth.ambientLoop();
+      await p.play(BytesSource(bytes, mimeType: 'audio/wav'), volume: 0.16);
     } catch (e) {
       _ambientPlaying = false;
       debugPrint('Ortam sesi başlatılamadı: $e');
@@ -90,10 +96,8 @@ class SynthAudioService implements AudioService {
 
   @override
   void dispose() {
-    for (final pool in _pools.values) {
-      for (final p in pool) {
-        unawaited(p.dispose());
-      }
+    for (final p in _pool) {
+      unawaited(p.dispose());
     }
     unawaited(_ambient?.dispose());
   }

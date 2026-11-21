@@ -77,7 +77,9 @@ class PumpjackPainter extends CustomPainter {
     final tail = PaintKit.circleIntersection(pivot, rearLen, pin, pitmanLen) ?? pivot + const Offset(rearLen, 0);
     final phi = atan2(tail.dy - pivot.dy, tail.dx - pivot.dx);
     final u = Offset(cos(phi), sin(phi)); // pivot → kuyruk
-    final jitter = running && !broken ? Offset(sin(time * 71) * 0.25, cos(time * 53) * 0.2) : Offset.zero;
+    final jitter = running && !broken && PaintKit.highQuality
+        ? Offset(sin(time * 71) * 0.25, cos(time * 53) * 0.2)
+        : Offset.zero;
 
     final beamColor = broken ? const Color(0xFFB8432F) : const Color(0xFFE0782A);
     const steel = Color(0xFF59616B);
@@ -121,7 +123,7 @@ class PumpjackPainter extends CustomPainter {
         ..color = Colors.black.withValues(alpha: 0.22 * (1 - n * 0.7))
         ..strokeWidth = 3.2
         ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6);
+        ..maskFilter = PaintKit.blur(1.6);
       canvas.drawLine(ground(fr), ground(re), shadow);
       canvas.drawCircle(ground(fr + const Offset(-4, 8)), 4.5, shadow..style = PaintingStyle.fill);
     }
@@ -166,7 +168,7 @@ class PumpjackPainter extends CustomPainter {
     PaintKit.sphere(canvas, const Offset(31, groundY - 26), 2.6, const Color(0xFFDADDE0), night: n);
     canvas.drawLine(
       const Offset(31, groundY - 26),
-      Offset(31 + cos(time * 0.7) * 1.6, groundY - 27.2),
+      Offset(31 + cos(PaintKit.highQuality ? time * 0.7 : 0.6) * 1.6, groundY - 27.2),
       Paint()
         ..color = Colors.black
         ..strokeWidth = 0.5,
@@ -531,7 +533,7 @@ class PumpjackPainter extends CustomPainter {
         r,
         Paint()
           ..color = Color.lerp(const Color(0xFF6E6A66), const Color(0xFFB8B4AE), t)!.withValues(alpha: 0.35 * (1 - t))
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1 + t * 2),
+          ..maskFilter = PaintKit.blur(1 + t * 2),
       );
     }
   }

@@ -58,13 +58,14 @@ class DayNight {
       : 'Gündüz';
 }
 
-/// Saniyede bir güncellenen gün-gece durumu.
+/// 4 saniyede bir güncellenen gün-gece durumu (8 dakikalık günde fark
+/// edilmez, gereksiz yeniden kurulumları azaltır).
 final dayNightProvider = NotifierProvider<DayNightController, DayNight>(DayNightController.new);
 
 class DayNightController extends Notifier<DayNight> {
   @override
   DayNight build() {
-    final timer = Timer.periodic(const Duration(seconds: 1), (_) => state = _compute());
+    final timer = Timer.periodic(const Duration(seconds: 4), (_) => state = _compute());
     ref.onDispose(timer.cancel);
     return _compute();
   }

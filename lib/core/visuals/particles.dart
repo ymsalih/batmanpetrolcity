@@ -1,11 +1,11 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 
-import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
 import '../ui/premium.dart';
+import 'painters/paint_kit.dart';
 
 enum ParticleKind { droplet, splash, mist, mud }
 
@@ -100,34 +100,29 @@ class GusherEffect extends StatefulWidget {
   State<GusherEffect> createState() => _GusherEffectState();
 }
 
-class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
+class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderStateMixin, FrameThrottle {
   ParticleSim? _sim;
   Size _size = Size.zero;
-  Duration _last = Duration.zero;
   double _elapsed = 0;
   double _spawnAcc = 0;
   double _mistAcc = 0;
-  bool _low = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker(_tick)..start();
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
+  double _particles = GraphicsLevel.balanced.particles;
 
   /// Basınç: önce yüksek, sonra sabit akışa oturur.
   double get _pressure => widget.intensity * (0.85 + 0.45 * exp(-_elapsed / 2.5) + 0.06 * sin(_elapsed * 7));
 
-  void _tick(Duration now) {
-    final dt = ((now - _last).inMicroseconds / 1e6).clamp(0.0, 1 / 20);
-    _last = now;
+  @override
+  void onFrame(double frameDt) {
+    // Fizik kare hızından bağımsız: düşük fps'te küçük adımlara bölünür.
+    var left = frameDt;
+    while (left > 0) {
+      final dt = min(left, 1 / 30);
+      left -= dt;
+      _step(dt);
+    }
+  }
+
+  void _step(double dt) {
     final sim = _sim;
     if (sim == null || _size.isEmpty) return;
     _elapsed += dt;
@@ -136,8 +131,8 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
     final rng = sim.rng;
     final wind = 30 * sin(_elapsed * 0.6);
 
-    // Düşük grafik modunda daha az parçacık.
-    _spawnAcc += dt * (_low ? 130 : 320);
+    // Grafik seviyesine göre parçacık sayısı (pil tasarrufunda ~1/3).
+    _spawnAcc += dt * 320 * _particles;
     while (_spawnAcc >= 1) {
       _spawnAcc -= 1;
       final mud = _elapsed < 0.7 && rng.nextDouble() < 0.6;
@@ -156,7 +151,7 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
         ),
       );
     }
-    _mistAcc += dt * 14;
+    _mistAcc += dt * 14 * _particles;
     while (_mistAcc >= 1) {
       _mistAcc -= 1;
       final peak = _peakHeight(h);
@@ -172,7 +167,6 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
       );
     }
     sim.update(dt, wind: wind);
-    setState(() {});
   }
 
   double _peakHeight(double h) {
@@ -182,7 +176,7 @@ class _GusherEffectState extends State<GusherEffect> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    _low = GraphicsMode.isLow(context);
+    _particles = GraphicsMode.of(context).particles;
     return LayoutBuilder(
       builder: (context, box) {
         _size = box.biggest;
@@ -274,7 +268,7 @@ class _GusherPainter extends CustomPainter {
             p.size,
             Paint()
               ..color = p.color.withValues(alpha: 0.22 * (1 - p.t))
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.6),
+              ..maskFilter = PaintKit.blur(p.size * 0.6),
           );
         case _:
           // Hıza göre uzayan damla: hareket bulanıklığı.

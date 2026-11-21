@@ -12,9 +12,9 @@ import '../../core/services/feedback.dart';
 import '../../core/services/services.dart';
 import '../../core/utils/format.dart';
 import '../../core/ui/premium.dart';
+import '../../core/visuals/animated_paint.dart';
 import '../../core/visuals/day_night.dart';
 import '../../core/visuals/landscape.dart';
-import '../../core/visuals/shaders.dart';
 import '../../core/widgets/effect_layer.dart';
 import 'parcel_tile.dart';
 
@@ -29,7 +29,8 @@ class SiteScreen extends ConsumerWidget {
         (s) => GameConfig.sites.where((c) => s.site(c.id).unlocked).map((c) => c.id).join(','),
       ),
     );
-    final dn = ref.watch(dayNightProvider);
+    // Tüm ekran her saniye yeniden kurulmasın: gece değeri kademeli izlenir.
+    final night = ref.watch(dayNightProvider.select((d) => (d.night * 10).round() / 10));
     final cfg = GameConfig.site(siteId);
 
     final siteIndex = GameConfig.sites.indexWhere((c) => c.id == siteId);
@@ -37,7 +38,7 @@ class SiteScreen extends ConsumerWidget {
       children: [
         Positioned.fill(
           child: _SiteBackground(
-            dn: dn,
+            night: night,
             seed: siteIndex,
             parallax: siteIndex / max(1, GameConfig.sites.length - 1) * 2 - 1,
           ),
@@ -103,20 +104,15 @@ class SiteScreen extends ConsumerWidget {
 }
 
 /// Üstte paralaks manzara, altta bulut gölgeleri gezinen toprak zemin.
-class _SiteBackground extends StatefulWidget {
-  const _SiteBackground({required this.dn, required this.seed, required this.parallax});
-  final DayNight dn;
+class _SiteBackground extends StatelessWidget {
+  const _SiteBackground({required this.night, required this.seed, required this.parallax});
+  final double night;
   final int seed;
   final double parallax;
 
   @override
-  State<_SiteBackground> createState() => _SiteBackgroundState();
-}
-
-class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProviderStateMixin, TimeTicker {
-  @override
   Widget build(BuildContext context) {
-    final dn = widget.dn;
+    final widget = this;
     return LayoutBuilder(
       builder: (context, box) {
         final band = box.maxHeight * 0.30;
@@ -131,11 +127,10 @@ class _SiteBackgroundState extends State<_SiteBackground> with SingleTickerProvi
                 fit: StackFit.expand,
                 children: [
                   SoilView(seed: widget.seed, base: const Color(0xFFA0714A)),
-                  if (!GraphicsMode.isLow(context))
-                    RepaintBoundary(
-                      child: CustomPaint(
-                        painter: CloudShadowPainter(time: seconds, night: dn.night),
-                      ),
+                  // Bulut gölgeleri yalnızca yüksek kalitede (bulanıklık pahalı).
+                  if (GraphicsMode.of(context).detail)
+                    AnimatedPaint(
+                      painter: (t) => CloudShadowPainter(time: t, night: night),
                     ),
                 ],
               ),

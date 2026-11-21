@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../config/palette.dart';
@@ -61,7 +62,7 @@ class GlassPanel extends StatelessWidget {
   Widget _content(BuildContext context, BorderRadius r) {
     // Bulanıklık mobilde pahalıdır: listelerde (blur: 0) ve düşük grafik
     // modunda kapatılır, yerine daha opak bir zemin kullanılır.
-    final useBlur = blur > 0 && !GraphicsMode.isLow(context);
+    final useBlur = blur > 0 && GraphicsMode.of(context).blur;
     final o = useBlur ? opacity : (opacity + 0.22).clamp(0.0, 0.95);
     final box = Container(
       padding: padding,
@@ -102,16 +103,117 @@ class GlassPanel extends StatelessWidget {
   }
 }
 
-/// Grafik kalitesi: düşük modda bulanıklık ve bazı efektler kapanır
-/// (pil ve eski telefonlar için).
-class GraphicsMode extends InheritedWidget {
-  const GraphicsMode({super.key, required this.low, required super.child});
-  final bool low;
+/// Grafik kalitesi kademeleri. Telefonlarda ısınma/donmayı önlemek için
+/// varsayılan [balanced]: animasyonlar saniyede 30 kare, bulanıklık yok.
+enum GraphicsLevel {
+  low('Pil tasarrufu', fps: 15, particles: 0.35, maxPixelRatio: 1.0),
+  balanced('Dengeli', fps: 30, particles: 0.6, maxPixelRatio: 1.5),
+  high('Yüksek', fps: 60, particles: 1, maxPixelRatio: 3);
 
-  static bool isLow(BuildContext context) => context.dependOnInheritedWidgetOfExactType<GraphicsMode>()?.low ?? false;
+  const GraphicsLevel(this.label, {required this.fps, required this.particles, required this.maxPixelRatio});
+
+  final String label;
+
+  /// Sürekli animasyonların en yüksek yeniden çizim hızı.
+  final int fps;
+
+  /// Parçacık sayısı çarpanı.
+  final double particles;
+
+  /// Önbelleğe çizilen büyük görüntülerin en yüksek piksel oranı (bellek).
+  final double maxPixelRatio;
+
+  /// Bulanıklık (BackdropFilter, MaskFilter) yalnızca yüksek kalitede.
+  bool get blur => this == high;
+
+  /// Bulut gölgeleri, motor titreşimi gibi ince süslemeler.
+  bool get detail => this == high;
+
+  Duration get frameInterval => Duration(microseconds: 1000000 ~/ fps);
+
+  static GraphicsLevel fromIndex(int? i) =>
+      i == null || i < 0 || i >= values.length ? GraphicsLevel.balanced : values[i];
+}
+
+/// Oyuncunun grafik seviyesini alt ağaca iletir.
+class GraphicsMode extends InheritedWidget {
+  const GraphicsMode({super.key, required this.level, required super.child});
+  final GraphicsLevel level;
+
+  static GraphicsLevel of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<GraphicsMode>()?.level ?? GraphicsLevel.balanced;
+
+  static bool isLow(BuildContext context) => of(context) == GraphicsLevel.low;
 
   @override
-  bool updateShouldNotify(GraphicsMode old) => old.low != low;
+  bool updateShouldNotify(GraphicsMode old) => old.level != level;
+}
+
+/// Sürekli animasyonlu widget'lar için kare hızı sınırlı zaman sayacı.
+///
+/// Ticker her vsync'te çalışır ama `setState` yalnızca grafik seviyesinin
+/// izin verdiği aralıkta çağrılır (15/30/60 fps). Ticker, gizli sekmelerde
+/// [TickerMode] ile otomatik susturulur.
+mixin FrameThrottle<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
+  late final Ticker _throttleTicker;
+  Duration _lastFrame = Duration.zero;
+  Duration _interval = GraphicsLevel.balanced.frameInterval;
+
+  /// Başlangıçtan bu yana geçen süre (sn).
+  double seconds = 0;
+
+  /// Son yeniden çizimden bu yana geçen süre (sn).
+  double frameDelta = 0;
+
+  /// Kare çizilmeden hemen önce çağrılır (durum ilerletmek için).
+  void onFrame(double dt) {}
+
+  /// False dönerse bu kare yeniden çizilmez (görüntü değişmiyorsa).
+  bool shouldRebuild() => true;
+
+  /// False dönerse ticker durur (ör. animasyon gerekmiyorsa).
+  bool get wantsTicks => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _throttleTicker = createTicker(_onTick);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _interval = GraphicsMode.of(context).frameInterval;
+    syncTicker();
+  }
+
+  /// [wantsTicks] değişince çağrılmalı.
+  void syncTicker() {
+    if (wantsTicks && !_throttleTicker.isActive) {
+      _lastFrame = Duration.zero;
+      _throttleTicker.start();
+    } else if (!wantsTicks && _throttleTicker.isActive) {
+      _throttleTicker.stop();
+    }
+  }
+
+  void _onTick(Duration elapsed) {
+    final since = elapsed - _lastFrame;
+    if (_lastFrame != Duration.zero && since < _interval) return;
+    final dt = _lastFrame == Duration.zero ? 0.0 : since.inMicroseconds / 1e6;
+    _lastFrame = elapsed;
+    // Uzun duraklamalardan (arka plan, gizli sekme) sonra sıçrama olmasın.
+    frameDelta = dt > 0.5 ? 0 : dt;
+    seconds += frameDelta;
+    onFrame(frameDelta);
+    if (shouldRebuild()) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _throttleTicker.dispose();
+    super.dispose();
+  }
 }
 
 /// Gradyanlı, parlama süpürmeli, basınca hafifçe küçülen premium buton.
@@ -218,10 +320,13 @@ class _PremiumButtonState extends State<PremiumButton> {
       ),
     );
 
-    if (enabled && widget.shine) {
-      body = body
-          .animate(onPlay: (c) => c.repeat())
-          .shimmer(delay: 2400.ms, duration: 1100.ms, color: Colors.white.withValues(alpha: 0.35), angle: 0.5);
+    // Sürekli parlama her karede yeniden çizim demek: yalnızca yüksek kalitede.
+    if (enabled && widget.shine && GraphicsMode.of(context).detail) {
+      body = RepaintBoundary(
+        child: body
+            .animate(onPlay: (c) => c.repeat())
+            .shimmer(delay: 2400.ms, duration: 1100.ms, color: Colors.white.withValues(alpha: 0.35), angle: 0.5),
+      );
     }
 
     return GestureDetector(

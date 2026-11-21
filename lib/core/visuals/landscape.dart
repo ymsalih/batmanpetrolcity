@@ -9,6 +9,7 @@ import '../../config/palette.dart';
 import 'day_night.dart';
 import 'painters/paint_kit.dart';
 import 'shaders.dart';
+import '../ui/premium.dart';
 
 /// Saha ekranının üst bandı: shader gökyüzü + atmosferik perspektifli
 /// katmanlı tepeler (paralaks) + süzülen kuşlar + uzaktaki kuleler.
@@ -64,7 +65,8 @@ class _LandscapeBackdropState extends ConsumerState<LandscapeBackdrop> with Sing
     // Yalnızca dilim değişince yeniden hesaplanır (saniyede bir build olsa da).
     final live = ref.watch(dayNightProvider.select((d) => (d.phase * _slices).floor()));
     final slice = widget.phase == null ? live : (widget.phase! * _slices).floor();
-    final dpr = MediaQuery.devicePixelRatioOf(context);
+    // Manzara yumuşak bir görüntü: tam ekran çözünürlüğü gereksiz bellek yer.
+    final dpr = MediaQuery.devicePixelRatioOf(context).clamp(1.0, GraphicsMode.of(context).maxPixelRatio).toDouble();
 
     return LayoutBuilder(
       builder: (context, box) {
@@ -135,7 +137,7 @@ class _LifeLayer extends ConsumerStatefulWidget {
   ConsumerState<_LifeLayer> createState() => _LifeLayerState();
 }
 
-class _LifeLayerState extends ConsumerState<_LifeLayer> with SingleTickerProviderStateMixin, TimeTicker {
+class _LifeLayerState extends ConsumerState<_LifeLayer> with SingleTickerProviderStateMixin, FrameThrottle {
   @override
   Widget build(BuildContext context) {
     final live = ref.watch(dayNightProvider);
@@ -159,7 +161,7 @@ class _FallbackLandscape extends ConsumerStatefulWidget {
 }
 
 class _FallbackLandscapeState extends ConsumerState<_FallbackLandscape>
-    with SingleTickerProviderStateMixin, TimeTicker {
+    with SingleTickerProviderStateMixin, FrameThrottle {
   @override
   Widget build(BuildContext context) {
     final dn = ref.watch(dayNightProvider);
@@ -306,9 +308,11 @@ class SoilView extends ConsumerStatefulWidget {
 
 class _SoilViewState extends ConsumerState<SoilView> {
   final _slot = ShaderSlot();
+  final _cache = ShaderImageCache();
 
   @override
   void dispose() {
+    _cache.dispose();
     _slot.dispose();
     super.dispose();
   }
@@ -318,19 +322,52 @@ class _SoilViewState extends ConsumerState<SoilView> {
     // Gece tonunu 20 kademeye yuvarla: her saniye yeniden çizilmesin.
     final night = ref.watch(dayNightProvider.select((d) => (d.night * 20).round() / 20));
     final program = ref.watch(shaderBankProvider).soil;
-    return RepaintBoundary(
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _SoilPainter(
-          shader: _slot.of(program),
-          night: night,
-          base: widget.base,
-          seed: widget.seed.toDouble(),
-          scale: widget.scale,
-        ),
-      ),
+    final painter = _SoilPainter(
+      shader: _slot.of(program),
+      night: night,
+      base: widget.base,
+      seed: widget.seed.toDouble(),
+      scale: widget.scale,
+    );
+    if (program == null) {
+      return RepaintBoundary(
+        child: CustomPaint(size: Size.infinite, painter: painter),
+      );
+    }
+    // Impeller'da shader içeren bir resim her karede GPU'da yeniden
+    // hesaplanır. Toprak statik olduğundan bir kez görüntüye çizilir; sonraki
+    // karelerde yalnızca bu görüntü kopyalanır.
+    final dpr = MediaQuery.devicePixelRatioOf(context).clamp(1.0, GraphicsMode.of(context).maxPixelRatio).toDouble();
+    return LayoutBuilder(
+      builder: (context, box) {
+        final size = box.biggest;
+        _cache.update(
+          key: (size, dpr, night, widget.base, widget.seed, widget.scale),
+          size: size,
+          pixelRatio: dpr,
+          paint: painter.paint,
+        );
+        return RepaintBoundary(
+          child: CustomPaint(size: size, painter: _ImagePainter(_cache.image)),
+        );
+      },
     );
   }
+}
+
+/// Önbellekteki görüntüyü alana yayarak çizer.
+class _ImagePainter extends CustomPainter {
+  _ImagePainter(this.image);
+  final ui.Image? image;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final img = image;
+    if (img != null) drawCachedImage(canvas, img, Offset.zero & size);
+  }
+
+  @override
+  bool shouldRepaint(_ImagePainter old) => old.image != image;
 }
 
 class _SoilPainter extends CustomPainter {

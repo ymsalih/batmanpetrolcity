@@ -1,11 +1,11 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'day_night.dart';
+import '../ui/premium.dart';
 
 /// Uygulama açılışında yüklenen fragment shader programları.
 /// Yüklenemezse (ör. test ortamı) null kalır ve gradyan yedeğine düşülür.
@@ -134,24 +134,6 @@ void drawCachedImage(Canvas canvas, ui.Image image, Rect dst, {double opacity = 
   );
 }
 
-/// Sürekli artan saniye değeri veren yardımcı mixin.
-mixin TimeTicker<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
-  late final Ticker _timeTicker;
-  double seconds = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _timeTicker = createTicker((elapsed) => setState(() => seconds = elapsed.inMicroseconds / 1e6))..start();
-  }
-
-  @override
-  void dispose() {
-    _timeTicker.dispose();
-    super.dispose();
-  }
-}
-
 /// Bulutlu, güneşli/yıldızlı prosedürel gökyüzü.
 class SkyView extends ConsumerStatefulWidget {
   const SkyView({super.key});
@@ -160,7 +142,7 @@ class SkyView extends ConsumerStatefulWidget {
   ConsumerState<SkyView> createState() => _SkyViewState();
 }
 
-class _SkyViewState extends ConsumerState<SkyView> with SingleTickerProviderStateMixin, TimeTicker {
+class _SkyViewState extends ConsumerState<SkyView> with SingleTickerProviderStateMixin, FrameThrottle {
   final _slot = ShaderSlot();
 
   @override
@@ -231,7 +213,7 @@ class HeatHazeOverlay extends ConsumerStatefulWidget {
   ConsumerState<HeatHazeOverlay> createState() => _HeatHazeOverlayState();
 }
 
-class _HeatHazeOverlayState extends ConsumerState<HeatHazeOverlay> with SingleTickerProviderStateMixin, TimeTicker {
+class _HeatHazeOverlayState extends ConsumerState<HeatHazeOverlay> with SingleTickerProviderStateMixin, FrameThrottle {
   final _slot = ShaderSlot();
 
   @override
